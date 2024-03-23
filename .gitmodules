@@ -1,0 +1,3 @@
+[submodule "themes/hugo-theme-codepunk"]
+	path = themes/hugo-theme-codepunk
+	url = https://github.com/KyKyPy3/hugo-theme-codepunk.git
