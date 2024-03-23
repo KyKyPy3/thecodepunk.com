@@ -5,7 +5,6 @@ showTableOfContents: true
 ---
 ## Introduction
 
-
 Hello and welcome to another issue of This Week in Rust! Rust is a programming language empowering everyone to build reliable and efficient software. This is a weekly summary of its progress and community. Want something mentioned? Tag us at @ThisWeekInRust on Twitter or @ThisWeekinRust on mastodon.social, or send us a pull request. Want to get involved? We love contributions.
 
 This Week in Rust is openly developed on GitHub. If you find any errors in this week's issue, please submit a PR.
