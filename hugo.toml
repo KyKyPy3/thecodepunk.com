@@ -1,0 +1,67 @@
+baseURL = 'https://thecodepunk.com'
+languageCode = 'en-us'
+title = 'The Old Punk in code - dig in trash and look for the truth'
+
+theme = "hugo-theme-codepunk"
+cleanDestinationDir = true
+
+[menu]
+    [[menu.header]]
+        identifier = "home"
+        name = "Home"
+        weight = 1
+        url = ""
+    [[menu.header]]
+        identifier = "resume"
+        name = "Resume"
+        weight = 2
+        url = "resume"
+    [[menu.header]]
+        identifier = "posts"
+        name = "Posts"
+        weight = 3
+        url = "posts"
+    [[menu.header]]
+        identifier = "tags"
+        name = "Tags"
+        weight = 4
+        url = "tags"
+    [[menu.header]]
+        identifier = "about"
+        name = "About"
+        weight = 5
+        url = "about"
+
+[params]
+    [[params.socialIcons]]
+    name = "twitter"
+    url = "https://twitter.com/kykypy3"
+
+    [[params.socialIcons]]
+    name = "github"
+    url = "https://github.com/kykypy3"
+
+    [[params.socialIcons]]
+    name = "linkedin"
+    url = "https://www.linkedin.com/in/roman-efremenko/"
+
+    [[params.socialIcons]]
+    name = "instagram"
+    url = "https://www.instagram.com/efremenko.roman/"
+
+[markup]
+  [markup.goldmark.renderer]
+    unsafe=true
+  [markup.highlight]
+    anchorLineNos = false
+    codeFences = true
+    guessSyntax = false
+    hl_Lines = ''
+    hl_inline = false
+    lineAnchors = ''
+    lineNoStart = 1
+    lineNos = false
+    lineNumbersInTable = true
+    noClasses = false
+    noHl = false
+    tabWidth = 2
