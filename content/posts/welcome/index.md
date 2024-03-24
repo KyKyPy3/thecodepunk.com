@@ -2,6 +2,7 @@
 title: Hello, world
 date: 2019-08-11 10:38:00
 showTableOfContents: true
+showComments: true
 ---
 ## Introduction
 

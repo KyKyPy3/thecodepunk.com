@@ -2,6 +2,7 @@
 title: Test post 1
 date: 2019-08-11 10:38:00
 showTableOfContents: true
+showComments: true
 tags:
   - rust
   - asynchronious
