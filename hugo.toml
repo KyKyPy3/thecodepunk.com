@@ -33,7 +33,6 @@ cleanDestinationDir = true
         url = "about"
 
 [params]
-    mainSections = ["home"]
     [[params.socialIcons]]
         name = "twitter"
         url = "https://twitter.com/kykypy3"
