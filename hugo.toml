@@ -33,21 +33,22 @@ cleanDestinationDir = true
         url = "about"
 
 [params]
+    mainSections = ["home"]
     [[params.socialIcons]]
-    name = "twitter"
-    url = "https://twitter.com/kykypy3"
+        name = "twitter"
+        url = "https://twitter.com/kykypy3"
 
     [[params.socialIcons]]
-    name = "github"
-    url = "https://github.com/kykypy3"
+        name = "github"
+        url = "https://github.com/kykypy3"
 
     [[params.socialIcons]]
-    name = "linkedin"
-    url = "https://www.linkedin.com/in/roman-efremenko/"
+        name = "linkedin"
+        url = "https://www.linkedin.com/in/roman-efremenko/"
 
     [[params.socialIcons]]
-    name = "instagram"
-    url = "https://www.instagram.com/efremenko.roman/"
+        name = "instagram"
+        url = "https://www.instagram.com/efremenko.roman/"
 
 [markup]
   [markup.goldmark.renderer]
