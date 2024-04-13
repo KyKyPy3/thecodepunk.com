@@ -5,9 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="cf3076ef-f645-481c-bf8d-52cc459ceacf" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/content/about/index.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/about/index.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/content/resume/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/content/resume/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/themes/hugo-theme-codepunk/assets/css/_page/_resume.scss" beforeDir="false" afterPath="$PROJECT_DIR$/themes/hugo-theme-codepunk/assets/css/_page/_resume.scss" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/content/posts/post1/index.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/posts/post1/index.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/content/posts/welcome/index.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/posts/Learning DDD/index.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/themes/hugo-theme-codepunk/assets/css/_page/_posts.scss" beforeDir="false" afterPath="$PROJECT_DIR$/themes/hugo-theme-codepunk/assets/css/_page/_posts.scss" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
