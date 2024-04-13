@@ -17,16 +17,17 @@ class: about
 
 Hello, my name is Roman. I am primarily a engineer.
 
-For the last 13 years I have been creating various products in the field of information security.
-I have created both software and hardware systems and over the years I have gained a lot of
-experience in how to make really big and serious projects. In addition, during all this time I have
-built a huge number of cool teams and raised a lot of high quality specialists in various fields.
-Many of them still respect me for the experience that they got under my leadership.
+In my childhood, I was quite introverted, preferring to spend all my free time indoors rather than 
+playing around outside with friends. Given that my parents were often absent, I was left to my own,
+dedicating all my time to two main activities - reading books and delving into the inner workings
+of things. 
 
-I have deep expertise in Go, containerization, and scalable and fail-safe application development
-best practices. In addition, I have broad experience in infrastructure as code (IaC) deployment.
-I played key roles in developing distributed systems architecture development on various projects.
-Furthermore, I am proficient in Go and can also develop simple projects using Rust and NodeJS.
+As I matured, I held onto these two traits. I continue to harbor a strong sense of curiosity,
+always delving into new subjects, and whenever I embark on learning something, I make a concerted
+effort to grasp its inner workings.
+
+Hence, when I claim to be an engineer, I'm drawing parallels to those pioneering scientists who
+devoted themselves to colossal computers that occupied entire rooms.
 
 {{<header>}}
 ███████████████████████████████████████████████████████████████████████
@@ -36,6 +37,7 @@ Furthermore, I am proficient in Go and can also develop simple projects using Ru
 {{</header>}}
 
 <ul class="interests">
+    <li><span class="interest-favorite">My kids</span>, because this is the most important people in the world for me.</li>
     <li><span class="interest-favorite">Go</span>, because this is the most simpled language in the world.</li>
     <li><span class="interest-favorite">Rust</span>, because this is the most loved language in the world.</li>
     <li><span class="interest-favorite">Typescript</span>, because it's the only one language for frontend developing.</li>
