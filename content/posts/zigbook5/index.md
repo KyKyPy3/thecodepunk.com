@@ -1,6 +1,6 @@
 ---
 title: Стек и куча
-date: 2025-02-22 16:00:00
+date: 2025-02-22 18:00:00
 showTableOfContents: true
 showComments: true
 katex: true
