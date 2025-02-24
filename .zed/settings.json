@@ -1,0 +1,28 @@
+// Folder-specific settings
+//
+// For a full list of overridable settings, and general information on folder-specific settings,
+// see the documentation: https://zed.dev/docs/configuring-zed#settings-files
+{
+  "features": {
+    "edit_prediction_provider": "zed"
+  },
+  "assistant": {
+    "default_model": {
+      "provider": "zed.dev",
+      "model": "claude-3-5-sonnet-latest"
+    },
+    "version": "2"
+  },
+  "languages": {
+    "HTML": {
+      "preferred_line_length": 120
+    },
+    "Markdown": {
+      "soft_wrap": "editor_width"
+    }
+  },
+  "soft_wrap": "editor_width",
+  "theme": "One Dark",
+  "buffer_font_size": null,
+  "tab_size": 2
+}
