@@ -22,14 +22,19 @@ cleanDestinationDir = true
         weight = 3
         url = "posts"
     [[menu.header]]
+        identifier = "projects"
+        name = "Projects"
+        weight = 4
+        url = "projects"
+    [[menu.header]]
         identifier = "tags"
         name = "Tags"
-        weight = 4
+        weight = 5
         url = "tags"
     [[menu.header]]
         identifier = "about"
         name = "About"
-        weight = 5
+        weight = 6
         url = "about"
 
 [params]
