@@ -292,3 +292,101 @@ pub fn main() void {
 // Объявление внешней C-функции
 extern fn strlen(s: [*:0]const u8) usize;
 ```
+
+Так как строки это обычные срезы, то мы можем обьединять строки используя аллокаторы:
+
+```zig
+const std = @import("std");
+
+pub fn main() !void {
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+    const allocator = gpa.allocator();
+
+    const str1 = "Hello, ";
+    const str2 = "World!";
+
+    // Выделяем память для результирующей строки
+    var result = try allocator.alloc(u8, str1.len + str2.len);
+    defer allocator.free(result);
+
+    // Копируем обе строки в результат
+    std.mem.copy(u8, result[0..str1.len], str1);
+    std.mem.copy(u8, result[str1.len..], str2);
+
+    std.debug.print("{s}\n", .{result});
+    // Вывод: Hello, World!
+}
+```
+
+В стандартной библиотеке Zig также есть более удобные функции для работы со строками, включая `std.fmt.allocPrint` которая позводит обьеденить строки более простым способом:
+
+```zig
+const std = @import("std");
+
+pub fn main() !void {
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+    const allocator = gpa.allocator();
+
+    const name = "World";
+    const greeting = try std.fmt.allocPrint(allocator, "Hello, {s}!", .{name});
+    defer allocator.free(greeting);
+
+    std.debug.print("{s}\n", .{greeting});
+    // Вывод: Hello, World!
+}
+```
+
+### Сравнение и поиск строк
+Для того чтобы сравнить строки в Zig мы не можем просто сравнить два массива. Для сравнения строк нам необходимо использовать функцию `std.mem.eql` которая сравнивает два массива байтов и возвращает `bool`:
+
+```zig
+const std = @import("std");
+
+pub fn main() void {
+    const str1 = "hello";
+    const str2 = "hello";
+    const str3 = "world";
+
+    const are_equal1 = std.mem.eql(u8, str1, str2);
+    const are_equal2 = std.mem.eql(u8, str1, str3);
+
+    std.debug.print("str1 == str2: {}\n", .{are_equal1});
+    // Вывод: str1 == str2: true
+
+    std.debug.print("str1 == str3: {}\n", .{are_equal2});
+    // Вывод: str1 == str3: false
+}
+```
+
+Для поиска подстроки в строке нам необходимо использовать функцию `std.mem.indexOf` которая возвращает индекс первого вхождения подстроки в строке или `null` если подстрока не найдена:
+
+```zig
+const std = @import("std");
+
+pub fn main() void {
+    const text = "Hello, World!";
+    const substring = "World";
+
+    const index = std.mem.indexOf(u8, text, substring);
+
+    if (index) |i| {
+        std.debug.print("Подстрока '{s}' найдена на позиции {}\n", .{substring, i});
+    } else {
+        std.debug.print("Подстрока '{s}' не найдена\n", .{substring});
+    }
+    // Вывод: Подстрока 'World' найдена на позиции 7
+}
+```
+
+## Заключение
+Срезы и строки в Zig являются мощными и гибкими инструментами, позволяющими эффективно работать с последовательностями данных и текстом. Понимание их особенностей и возможностей критически важно для написания эффективного и безопасного кода.
+
+Ключевые моменты, которые следует запомнить:
+
+1. Срезы представляют собой "вид" на последовательность элементов и содержат указатель на начало и длину.
+2. Строки в Zig — это просто срезы константных байтов (`[]const u8`).
+3. Для большинства операций со строками и срезами требуется аллокатор для управления памятью.
+4. Zig предлагает sentinel срезы для совместимости с C-строками и другими API, требующими терминаторы.
+5. Стандартная библиотека Zig предоставляет множество полезных функций для работы со строками и срезами.
