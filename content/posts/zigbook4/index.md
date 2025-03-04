@@ -58,7 +58,7 @@ const length = zeros.len;
 
 Хранение длины в структуре массива позволяет Zig выполнять проверки границ массива на этапе компиляции и во время выполнения, что защищает от распространённых ошибок доступа к памяти.
 
-Также массивы в Zig поддерживают многомерность. Вы можете создавать двумерные и более массивы:
+Массивы в Zig поддерживают многомерность, что бывает полезно в задачах работы с матрицами. Вы можете создавать двумерные и более массивы:
 
 ```zig
 const matrix = [3][3]i32{
@@ -248,27 +248,6 @@ fn factorials(comptime size: usize) [size]u64 {
 pub fn main() void {
     // Массив вычисляется на этапе компиляции
     const facts = factorials(5);  // [5]u64{ 1, 2, 6, 24, 120 }
-}
-```
-
-### Инициализация с помощью шаблонов
-
-```zig
-const std = @import("std");
-
-// Функция для создания массива с повторяющимся шаблоном
-fn repeatingPattern(comptime size: usize, pattern: []const i32) [size]i32 {
-    var arr: [size]i32 = undefined;
-    for (&arr, 0..) |*item, i| {
-        item.* = pattern[i % pattern.len];
-    }
-    return arr;
-}
-
-pub fn main() void {
-    const pattern = [_]i32{ 1, 2, 3 };
-    const repeated = repeatingPattern(8, &pattern);
-    // repeated = [8]i32{ 1, 2, 3, 1, 2, 3, 1, 2 }
 }
 ```
 
