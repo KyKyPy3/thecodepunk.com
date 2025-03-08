@@ -1,6 +1,6 @@
 ---
 title: Функции и работа с ошибками
-date: 2025-03-08 15:00:00
+date: 2025-03-07 15:00:00
 showTableOfContents: true
 showComments: true
 katex: true
