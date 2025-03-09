@@ -616,3 +616,69 @@ src/main.zig:11:33: error: access of union field 'float' while field 'int' is ac
                                ~^~~~~~
 src/main.zig:3:16: note: union declared here
 ```
+
+### Маркированные объединения
+Маркированные объединения — это мощный инструмент в языке Zig, который позволяет создавать типы данных, способные хранить значения разных типов, но с явной меткой (тегом), указывающей, какой именно тип данных используется в данный момент. Это делает их безопасной и удобной альтернативой традиционным объединениям (`union`) из языка C, где отсутствует встроенная проверка корректности типа. В Zig маркированные объединения реализуются с помощью ключевого слова `union`, которое используется вместе с перечислением (`enum`) для определения тегов.
+
+```zig
+const std = @import("std");
+
+const Value = union(enum) {
+    int: i32,
+    float: f64,
+    bool: bool,
+};
+
+pub fn main() !void {
+    const val = Value{ .float = 5.0 };
+
+    switch (val) {
+        .float => |f| std.debug.print("Value is float: {}\n", .{f}),
+        .int => |i| std.debug.print("Value is int: {}\n", .{i}),
+        .bool => |b| std.debug.print("Value is bool: {}\n", .{b}),
+    }
+}
+```
+
+Этот код выведет:
+
+```
+Value is float: 5.0
+```
+
+В этом примере Value — это маркированное объединение, которое может хранить либо целое число (int), либо число с плавающей точкой (float), либо логическое значение (bool). Тег (enum) автоматически добавляется компилятором и позволяет безопасно работать с данными.
+
+Предположим мы хотим написать функцию, которая получает наше значение `Value` и тег нашего типа, какой тип будет у параметра функции если наш тег компилятор выводит автоматически. Для того чтобы указать что тип переменной это перечисление (`enum`), которое было сформировано компилятором мы можем использовать функцию из стандартной библиотеки `std.meta.Tag`, которая возвращает тип тега для заданного типа объединения:
+
+```zig
+const std = @import("std");
+
+const Value = union(enum) {
+    int: i32,
+    float: f64,
+    bool: bool,
+};
+
+fn is(value: Value, tag: std.meta.Tag(Value)) bool {
+    return value == tag;
+}
+
+pub fn main() !void {
+    const val = Value{ .float = 5.0 };
+
+    switch (val) {
+        .float => |f| std.debug.print("Value is float: {}\n", .{f}),
+        .int => |i| std.debug.print("Value is int: {}\n", .{i}),
+        .bool => |b| std.debug.print("Value is bool: {}\n", .{b}),
+    }
+
+    std.debug.print("Is integer value: {}\n", .{is(val, .int)});
+}
+```
+
+Этот код выведет:
+
+```
+Value is float: 5.0
+Is integer value: false
+```
