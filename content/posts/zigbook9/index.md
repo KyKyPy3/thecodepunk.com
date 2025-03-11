@@ -832,3 +832,82 @@ pub fn some_func() !void {
 ```
 
 Согласитесь так гораздо короче. По сути оператор `try` делает следующее - если при вызове функции возникла ошибка, она будет возвращена вызывающей функции, если ошибки нет, то `try` просто вернет значение, которое вернула функция.
+
+### Обработка ошибок
+Обычно для обработки ошибок в Zig удобно использовать связку оператора `catch` и оператора `switch`. Это позволяет нам обрабатывать ошибки в удобном для нас виде. Предположим, у нас есть функция readFile, которая пытается прочитать файл и может вернуть различные ошибки, такие как NotFound, PermissionDenied или DiskFull. Мы хотим обработать каждую ошибку по-своему.
+
+```zig
+const std = @import("std");
+
+const FileError = error{
+    NotFound,
+    PermissionDenied,
+    DiskFull,
+};
+
+fn readFile(path: []const u8) FileError![]const u8 {
+    if (std.mem.eql(u8, path, "")) return error.NotFound;
+    if (std.mem.eql(u8, path, "/restricted")) return error.PermissionDenied;
+    if (std.mem.eql(u8, path, "/full")) return error.DiskFull;
+    return "Содержимое файла";
+}
+
+pub fn main() void {
+    const path = "/restricted"; // Попробуйте изменить путь на "/full" или ""
+    const result = readFile(path) catch |err| switch (err) {
+        error.NotFound => {
+            std.debug.print("Файл не найден: {s}\n", .{path});
+            return;
+        },
+        error.PermissionDenied => {
+            std.debug.print("Доступ запрещён: {s}\n", .{path});
+            return;
+        },
+        error.DiskFull => {
+            std.debug.print("Диск переполнен: {s}\n", .{path});
+            return;
+        },
+    };
+    std.debug.print("Успешно прочитано: {s}\n", .{result});
+}
+```
+
+В данном примере мы используем оператор `switch` чтобы по разному обработать разные типы ошибок, которые могут возникнуть при чтении файла. В зависимости от типа ошибки, мы выводим соответствующее сообщение и завершаем программу.
+
+Два других популярных способа обработки ошибок в Zig — это использование операторов if и while.
+
+Оператор `if` позволяет проверить, произошла ли ошибка при выполнении операции. Если ошибки нет, значение присваивается переменной, которую можно использовать внутри блока `if`. В случае ошибки можно обработать её в блоке `else`.
+
+Вот как это работает:
+
+```zig
+if (someFunctionThatMayFail()) |result| {
+    std.debug.print("Success: {}\n", .{result});
+} else |err| {
+    std.debug.print("Error occurred: {}\n", .{err});
+}
+```
+
+Также можно использовать оператор while для обработки ошибок, особенно когда требуется многократное выполнение операции до успешного результата. Принцип обработки ошибки в нем схож с тем как мы делаем это в операторе `if`:
+
+```zig
+const std = @import("std");
+
+fn mightFail(counter: *u8) !u8 {
+    if (counter.* < 3) {
+        counter.* += 1;
+        return error.TryAgain;
+    }
+    return 42; // Успешный результат после нескольких попыток
+}
+
+pub fn main() !void {
+    var attempt: u8 = 0;
+
+    while (mightFail(&attempt)) |result| {
+        std.debug.print("Success: {}\n", .{result});
+    } else |err| {
+        std.debug.print("Error occurred: {}\n", .{err});
+    }
+}
+```
