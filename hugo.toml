@@ -22,19 +22,24 @@ cleanDestinationDir = true
         weight = 3
         url = "posts"
     [[menu.header]]
+        identifier = "zigbook"
+        name = "Zig Book"
+        weight = 4
+        url = "zigbook"
+    [[menu.header]]
         identifier = "projects"
         name = "Projects"
-        weight = 4
+        weight = 5
         url = "projects"
     [[menu.header]]
         identifier = "tags"
         name = "Tags"
-        weight = 5
+        weight = 6
         url = "tags"
     [[menu.header]]
         identifier = "about"
         name = "About"
-        weight = 6
+        weight = 7
         url = "about"
 
 [params]
