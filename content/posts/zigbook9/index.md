@@ -40,7 +40,7 @@ const Point = struct {
 };
 
 pub fn main() void {
-    var p = Point{ .x = 10, .y = 20 };
+    const p = Point{ .x = 10, .y = 20 };
     std.debug.print("Point: ({d}, {d})\n", .{ p.x, p.y });
 }
 ```
@@ -182,4 +182,203 @@ pub fn main() void {
 2. `perimeter()` - вычисляет периметр прямоугольника
 3. `scale()` - изменяет размеры прямоугольника, умножая их на указанный коэффициент
 
-Обратите внимание, что методы `area()` и `perimeter()` принимают параметр `self` по значению, так как они только читают данные структуры. А метод `scale()` принимает `self` по указателю (`*Rectangle`), так как он изменяет поля структуры.
+Обратите внимание, что методы `area()` и `perimeter()` принимают параметр `self` по значению, так как они только читают данные структуры. А метод `scale()` принимает `self` по указателю (`*Rectangle`), так как он изменяет поля структуры. Как Вы могли заметить параметр структуры, который мы передаем первым аргументом имеет наименование `self`. Это не обязательное требование, а просто соглашение и вы можете использовать любое другое имя, если хотите, например в нашем примере Вы можете использовать `rect` вместо `self`.
+
+## Вложенные структуры
+В Zig структуры могут быть вложенными, то есть одна структура может содержать другую структуру в качестве поля. Рассмотрим пример вложенной структуры:
+
+```zig
+const std = @import("std");
+
+const Address = struct {
+    street: []const u8,
+    city: []const u8,
+    zip_code: []const u8,
+};
+
+const Person = struct {
+    name: []const u8,
+    age: u32,
+    address: Address,
+
+    pub fn init(name: []const u8, age: u32, street: []const u8, city: []const u8, zip_code: []const u8) Person {
+        return Person{
+            .name = name,
+            .age = age,
+            .address = Address{
+                .street = street,
+                .city = city,
+                .zip_code = zip_code,
+            },
+        };
+    }
+
+    pub fn printInfo(self: Person) void {
+        std.debug.print("Name: {s}, Age: {d}\n", .{ self.name, self.age });
+        std.debug.print("Address: {s}, {s}, {s}\n", .{
+            self.address.street,
+            self.address.city,
+            self.address.zip_code
+        });
+    }
+};
+
+pub fn main() void {
+    const person = Person.init(
+        "John Doe",
+        30,
+        "123 Main St",
+        "New York",
+        "10001"
+    );
+
+    person.printInfo();
+}
+```
+
+В этом примере структура `Person` содержит вложенную структуру `Address`. Это позволяет организовать данные в более структурированном и логичном виде.
+
+## Модификатор доступа для полей и методов структуры
+В Zig, ключевое слово `pub` (от англ. "public" - публичный) служит модификатором доступа, который определяет, видимы ли поля и методы структуры за её пределами. Это важный механизм для контроля доступа к данным и реализации инкапсуляции.
+
+### Публичные и приватные поля
+По умолчанию, все поля и методы структуры в Zig являются приватными - они доступны только внутри модуля, где определена структура. Если вы хотите сделать поле или метод доступным извне, вы должны пометить его ключевым словом `pub`:
+
+```zig
+const std = @import("std");
+
+const Counter = struct {
+    // Публичное поле, доступно извне
+    pub value: u32,
+
+    // Приватное поле, доступно только внутри структуры
+    max_value: u32,
+
+    pub fn init(max: u32) Counter {
+        return Counter{
+            .value = 0,
+            .max_value = max,
+        };
+    }
+
+    pub fn increment(self: *Counter) void {
+        if (self.value < self.max_value) {
+            self.value += 1;
+        }
+    }
+
+    pub fn reset(self: *Counter) void {
+        self.value = 0;
+    }
+
+    // Приватный метод, доступен только внутри модуля
+    fn validate(self: Counter) bool {
+        return self.value <= self.max_value;
+    }
+};
+
+pub fn main() void {
+    var counter = Counter.init(100);
+
+    // Доступ к публичному полю
+    std.debug.print("Initial value: {d}\n", .{counter.value});
+
+    // Использование публичных методов
+    counter.increment();
+    counter.increment();
+    std.debug.print("After increment: {d}\n", .{counter.value});
+
+    counter.reset();
+    std.debug.print("After reset: {d}\n", .{counter.value});
+
+    // Следующая строка вызовет ошибку компиляции, так как max_value - приватное поле
+    // std.debug.print("Max value: {d}\n", .{counter.max_value});
+
+    // Следующая строка вызовет ошибку компиляции, так как validate - приватный метод
+    // counter.validate();
+}
+```
+
+В этом примере:
+- `value` - публичное поле, к которому можно обращаться извне структуры
+- `max_value` - приватное поле, доступное только внутри методов структуры
+- `init`, `increment` и `reset` - публичные методы, которые можно вызывать извне
+- `validate` - приватный метод, который можно вызывать только из других методов структуры
+
+### Инкапсуляция в Zig
+
+Использование ключевого слова `pub` позволяет реализовать принцип инкапсуляции из объектно-ориентированного программирования. Вы можете скрыть внутреннее состояние структуры, предоставляя доступ только через публичные методы:
+
+```zig
+const std = @import("std");
+
+const BankAccount = struct {
+    // Все поля приватные
+    account_number: []const u8,
+    balance: f64,
+    owner: []const u8,
+
+    pub fn init(account_number: []const u8, owner: []const u8) BankAccount {
+        return BankAccount{
+            .account_number = account_number,
+            .balance = 0.0,
+            .owner = owner,
+        };
+    }
+
+    pub fn deposit(self: *BankAccount, amount: f64) !void {
+        if (amount <= 0) {
+            return error.InvalidAmount;
+        }
+        self.balance += amount;
+    }
+
+    pub fn withdraw(self: *BankAccount, amount: f64) !void {
+        if (amount <= 0) {
+            return error.InvalidAmount;
+        }
+        if (amount > self.balance) {
+            return error.InsufficientFunds;
+        }
+        self.balance -= amount;
+    }
+
+    pub fn getBalance(self: BankAccount) f64 {
+        return self.balance;
+    }
+
+    pub fn getOwner(self: BankAccount) []const u8 {
+        return self.owner;
+    }
+
+    pub fn getAccountNumber(self: BankAccount) []const u8 {
+        return self.account_number;
+    }
+};
+
+pub fn main() !void {
+    var account = BankAccount.init("123456789", "John Doe");
+
+    try account.deposit(1000.0);
+    std.debug.print("Balance after deposit: {d:.2}\n", .{account.getBalance()});
+
+    try account.withdraw(500.0);
+    std.debug.print("Balance after withdrawal: {d:.2}\n", .{account.getBalance()});
+
+    std.debug.print("Account owner: {s}\n", .{account.getOwner()});
+    std.debug.print("Account number: {s}\n", .{account.getAccountNumber()});
+
+    // Ошибка компиляции - нет прямого доступа к приватным полям
+    // std.debug.print("Direct balance access: {d}\n", .{account.balance});
+}
+```
+
+В этом примере мы создали структуру `BankAccount` с полностью приватными полями. Доступ к этим полям предоставляется только через публичные методы, что обеспечивает контроль над тем, как данные могут быть изменены или прочитаны.
+
+При проектировании структур в Zig рекомендуется следовать принципу "минимальной необходимой доступности":
+
+1. Делайте публичными (`pub`) только те поля и методы, которые действительно должны быть доступны извне.
+2. Для полей, которые не должны напрямую изменяться извне, предоставляйте специальные методы для чтения и изменения.
+3. Внутренние вспомогательные методы оставляйте приватными.
+
+Такой подход помогает создавать более надежный и поддерживаемый код, уменьшая риск неправильного использования структуры и облегчая изменение внутренней реализации без влияния на внешний интерфейс.
