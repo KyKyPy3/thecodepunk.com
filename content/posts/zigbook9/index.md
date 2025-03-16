@@ -202,6 +202,151 @@ pub fn main() void {
 
 Также как Вы могли заметить при вызове методов структуры мы используем точечную нотацию (`.`), чтобы вызвать методы структуры. Например, чтобы вызвать метод `area()` у структуры `Rectangle`, мы используем `rect.area()`. Это по сути синтаксический сахар для вызова метода структуры, но мы могли бы использовать и кклассический способ вызова функции `Rectangle.area(rect)`, но он менее удобен и не используется.
 
+В Zig указатели на структуры имеют особую особенность - вы можете использовать оператор `.` для доступа к полям структуры через указатель напрямую, без необходимости сначала разыменовывать указатель. В большинстве языков программирования для доступа к полям структуры через указатель используется специальный синтаксис (например, `->` в C/C++). В Zig используется тот же оператор `.` как для обычных экземпляров структур, так и для указателей на структуры:
+
+```zig
+const std = @import("std");
+
+const Person = struct {
+    name: []const u8,
+    age: u32,
+
+    pub fn init(name: []const u8, age: u32) Person {
+        return Person{
+            .name = name,
+            .age = age,
+        };
+    }
+};
+
+pub fn main() void {
+    // Создаем экземпляр структуры
+    var person = Person.init("John", 30);
+
+    // Создаем указатель на структуру
+    var person_ptr: *Person = &person;
+
+    // Доступ к полям через указатель с использованием оператора '.'
+    std.debug.print("Name: {s}, Age: {d}\n", .{person_ptr.name, person_ptr.age});
+
+    // Изменение поля через указатель
+    person_ptr.age = 31;
+    std.debug.print("Updated age: {d}\n", .{person.age});
+}
+```
+
+В этом примере мы создаем структуру `Person`, создаем экземпляр этой структуры, а затем получаем указатель на этот экземпляр. Затем мы используем оператор `.` для доступа к полям структуры через указатель и для изменения значения поля `age`.
+
+### Цепочка вызовов методов через указатель
+
+Поскольку в Zig можно использовать оператор `.` с указателями, это позволяет создавать цепочки вызовов методов (метод-чейнинг), что особенно полезно для создания текучих API:
+
+```zig
+const std = @import("std");
+
+const StringBuilder = struct {
+    buffer: [1024]u8 = undefined,
+    length: usize = 0,
+
+    pub fn init() StringBuilder {
+        return StringBuilder{};
+    }
+
+    pub fn append(self: *StringBuilder, text: []const u8) *StringBuilder {
+        std.mem.copy(u8, self.buffer[self.length..], text);
+        self.length += text.len;
+        return self; // Возвращаем указатель на self
+    }
+
+    pub fn appendInt(self: *StringBuilder, value: i32) *StringBuilder {
+        const written = std.fmt.formatIntBuf(
+            self.buffer[self.length..],
+            value,
+            10,
+            .lower,
+            .{}
+        );
+        self.length += written;
+        return self; // Возвращаем указатель на self
+    }
+
+    pub fn toString(self: *const StringBuilder) []const u8 {
+        return self.buffer[0..self.length];
+    }
+
+    pub fn clear(self: *StringBuilder) *StringBuilder {
+        self.length = 0;
+        return self; // Возвращаем указатель на self
+    }
+};
+
+pub fn main() void {
+    var builder = StringBuilder.init();
+
+    // Используем цепочку вызовов методов
+    const result = builder
+        .append("Hello, ")
+        .append("the answer is ")
+        .appendInt(42)
+        .append("!")
+        .toString();
+
+    std.debug.print("{s}\n", .{result});
+
+    // Очищаем и создаем новую строку
+    const another_result = builder
+        .clear()
+        .append("Another ")
+        .appendInt(123)
+        .append(" message")
+        .toString();
+
+    std.debug.print("{s}\n", .{another_result});
+}
+```
+
+В этом примере методы `append`, `appendInt` и `clear` возвращают указатель на `self`, что позволяет цепочкой вызывать методы. Обратите внимание, что мы используем оператор `.` для доступа к методам через указатель, что делает код более читаемым.
+
+### Работа с опциональными указателями
+
+Оператор `.` также можно использовать с опциональными указателями на структуры, но в этом случае вам нужно сначала разыменовать опциональный указатель:
+
+```zig
+const std = @import("std");
+
+const Node = struct {
+    value: i32,
+    next: ?*Node,
+
+    pub fn init(value: i32) Node {
+        return Node{
+            .value = value,
+            .next = null,
+        };
+    }
+};
+
+pub fn main() void {
+    var node1 = Node.init(1);
+    var node2 = Node.init(2);
+
+    // Связываем узлы
+    node1.next = &node2;
+
+    // Доступ к полям через опциональный указатель
+    if (node1.next) |next_node| {
+        std.debug.print("Next node value: {d}\n", .{next_node.value});
+    }
+
+    // Альтернативный способ доступа
+    if (node1.next != null) {
+        std.debug.print("Next node value: {d}\n", .{node1.next.?.value});
+    }
+}
+```
+
+В этом примере мы создаем два узла связного списка и связываем их. Затем мы демонстрируем два способа доступа к полям через опциональный указатель: с помощью оператора `|next_node|` и с помощью оператора `?`.
+
 ## Вложенные структуры
 В Zig структуры могут быть вложенными, то есть одна структура может содержать другую структуру в качестве поля. Рассмотрим пример вложенной структуры:
 
