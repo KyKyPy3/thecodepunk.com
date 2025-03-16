@@ -4,7 +4,7 @@ showMeta: false
 class: zigbook
 ---
 
-[Введение]({{% ref "posts/zigbook1" %}})
+[Введение в Zig]({{% ref "posts/zigbook1" %}})
 #### Основы Zig
 * [Переменные, константы и типы данных]({{% ref "posts/zigbook2" %}})
 * [Массивы]({{% ref "posts/zigbook3" %}})
