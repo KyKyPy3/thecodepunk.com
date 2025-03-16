@@ -256,6 +256,259 @@ pub fn main() void {
 
 В этом примере структура `Person` содержит вложенную структуру `Address`. Это позволяет организовать данные в более структурированном и логичном виде.
 
+## Функция @fieldParentPtr и взаимодействие с вложенными структурами
+
+Одной из мощных встроенных функций в Zig является `@fieldParentPtr`, которая позволяет получить указатель на родительскую структуру по указателю на одно из ее полей. Эта функция особенно полезна при реализации сложных структур данных, обработчиков событий и компонентно-ориентированных архитектур.
+
+Функция `@fieldParentPtr` принимает три аргумента:
+1. Тип родительской структуры
+2. Имя поля как строковый литерал
+3. Указатель на поле структуры
+
+Она возвращает указатель на родительскую структуру. Синтаксис:
+
+```zig
+@fieldParentPtr(ParentType, "field_name", field_pointer)
+```
+
+Одним из наиболее распространенных применений `@fieldParentPtr` является реализация обработчиков событий или callback-функций. Рассмотрим пример с простой системой обработки событий:
+
+```zig
+const std = @import("std");
+const Allocator = std.mem.Allocator;
+
+// Определение типа обработчика событий
+const EventHandler = struct {
+    // Указатель на функцию обработки событий
+    handleFn: fn (handler: *EventHandler, event: []const u8) void,
+
+    // Обработка события
+    pub fn handle(self: *EventHandler, event: []const u8) void {
+        self.handleFn(self, event);
+    }
+};
+
+// Структура кнопки, включающая обработчик событий
+const Button = struct {
+    label: []const u8,
+    // Встроенный обработчик событий
+    event_handler: EventHandler,
+
+    pub fn init(label: []const u8) Button {
+        return Button{
+            .label = label,
+            // Инициализируем обработчик событий с нашей функцией
+            .event_handler = EventHandler{
+                .handleFn = buttonHandleEvent,
+            },
+        };
+    }
+
+    pub fn click(self: *Button) void {
+        std.debug.print("Button '{s}' clicked!\n", .{self.label});
+        // Вызываем обработчик события
+        self.event_handler.handle("click");
+    }
+
+    // Функция обработки событий для кнопки
+    fn buttonHandleEvent(handler: *EventHandler, event: []const u8) void {
+        // Получаем указатель на родительскую структуру Button
+        // из указателя на вложенное поле event_handler
+        const button = @fieldParentPtr(Button, "event_handler", handler);
+        std.debug.print("Event '{s}' handled by button '{s}'\n", .{event, button.label});
+    }
+};
+
+pub fn main() void {
+    var submit_button = Button.init("Submit");
+    var cancel_button = Button.init("Cancel");
+
+    submit_button.click();
+    cancel_button.click();
+}
+```
+
+В этом примере мы создали структуру `Button`, которая содержит поле `event_handler` типа `EventHandler`. Когда происходит событие (нажатие кнопки), вызывается метод `handle` обработчика событий, который, в свою очередь, вызывает функцию `buttonHandleEvent`.
+
+Внутри функции `buttonHandleEvent` мы используем `@fieldParentPtr` для получения указателя на родительскую структуру `Button` из указателя на поле `event_handler`. Это позволяет нам получить доступ к полям родительской структуры (в данном случае, к полю `label`).
+
+### Использование @fieldParentPtr для реализации примесей (mixins)
+
+`@fieldParentPtr` также может использоваться для реализации примесей (mixins) — механизма, который позволяет добавить функциональность структуре через композицию:
+
+```zig
+const std = @import("std");
+
+// Базовая примесь для хранения имени
+const NamedMixin = struct {
+    name: []const u8,
+
+    pub fn getName(self: *NamedMixin) []const u8 {
+        return self.name;
+    }
+};
+
+// Базовая примесь для хранения возраста
+const AgedMixin = struct {
+    age: u32,
+
+    pub fn getAge(self: *AgedMixin) u32 {
+        return self.age;
+    }
+
+    pub fn isAdult(self: *AgedMixin) bool {
+        return self.age >= 18;
+    }
+};
+
+// Структура, использующая примеси
+const Person = struct {
+    named_part: NamedMixin,
+    aged_part: AgedMixin,
+
+    pub fn init(name: []const u8, age: u32) Person {
+        return Person{
+            .named_part = NamedMixin{ .name = name },
+            .aged_part = AgedMixin{ .age = age },
+        };
+    }
+
+    // Функция-помощник для получения указателя на Person из NamedMixin
+    pub fn fromNamed(named: *NamedMixin) *Person {
+        return @fieldParentPtr(Person, "named_part", named);
+    }
+
+    // Функция-помощник для получения указателя на Person из AgedMixin
+    pub fn fromAged(aged: *AgedMixin) *Person {
+        return @fieldParentPtr(Person, "aged_part", aged);
+    }
+
+    // Метод, использующий обе примеси
+    pub fn introduce(self: *Person) void {
+        std.debug.print("Hello, my name is {s} and I am {d} years old.\n",
+            .{ self.named_part.getName(), self.aged_part.getAge() });
+
+        if (self.aged_part.isAdult()) {
+            std.debug.print("I am an adult.\n", .{});
+        } else {
+            std.debug.print("I am not an adult yet.\n", .{});
+        }
+    }
+};
+
+pub fn main() void {
+    var person = Person.init("Alice", 25);
+    person.introduce();
+
+    // Можно также использовать функции примесей напрямую
+    std.debug.print("Name: {s}\n", .{person.named_part.getName()});
+    std.debug.print("Age: {d}\n", .{person.aged_part.getAge()});
+
+    // Демонстрация использования функций-помощников
+    var named_ref = &person.named_part;
+    var person_from_named = Person.fromNamed(named_ref);
+    std.debug.print("Retrieved person's age: {d}\n", .{person_from_named.aged_part.getAge()});
+
+    var aged_ref = &person.aged_part;
+    var person_from_aged = Person.fromAged(aged_ref);
+    std.debug.print("Retrieved person's name: {s}\n", .{person_from_aged.named_part.getName()});
+}
+```
+
+В этом примере мы создали две примеси (`NamedMixin` и `AgedMixin`), которые реализуют отдельные аспекты функциональности. Структура `Person` включает обе примеси как поля и предоставляет функции-помощники `fromNamed` и `fromAged`, которые используют `@fieldParentPtr` для получения указателя на `Person` из указателя на примесь.
+
+### Реализация интрузивных структур данных
+
+`@fieldParentPtr` также часто используется при реализации интрузивных структур данных, где элементы списка или дерева содержат узлы внутри себя, а не узлы содержат данные. Вот пример интрузивного связного списка:
+
+```zig
+const std = @import("std");
+const Allocator = std.mem.Allocator;
+
+// Интрузивный узел списка
+const ListNode = struct {
+    next: ?*ListNode = null,
+
+    // Функция для получения следующего узла
+    pub fn getNext(self: *ListNode) ?*ListNode {
+        return self.next;
+    }
+
+    // Функция для установки следующего узла
+    pub fn setNext(self: *ListNode, node: ?*ListNode) void {
+        self.next = node;
+    }
+};
+
+// Структура интрузивного списка
+const IntrusiveList = struct {
+    head: ?*ListNode = null,
+
+    // Добавляет узел в начало списка
+    pub fn prepend(self: *IntrusiveList, node: *ListNode) void {
+        node.next = self.head;
+        self.head = node;
+    }
+
+    // Выводит все элементы списка
+    pub fn printAll(self: *IntrusiveList, comptime T: type, comptime field_name: []const u8) void {
+        var current = self.head;
+        while (current) |node| {
+            // Получаем родительскую структуру из узла
+            const item = @fieldParentPtr(T, field_name, node);
+            std.debug.print("{any}\n", .{item.*});
+            current = node.next;
+        }
+    }
+};
+
+// Пример структуры, которая будет использоваться в списке
+const Task = struct {
+    id: u32,
+    name: []const u8,
+    // Интрузивный узел как часть структуры
+    list_node: ListNode = ListNode{},
+
+    pub fn init(id: u32, name: []const u8) Task {
+        return Task{
+            .id = id,
+            .name = name,
+        };
+    }
+};
+
+pub fn main() void {
+    var list = IntrusiveList{};
+
+    var task1 = Task.init(1, "Wash dishes");
+    var task2 = Task.init(2, "Clean room");
+    var task3 = Task.init(3, "Do homework");
+
+    // Добавляем задачи в список
+    list.prepend(&task3.list_node);
+    list.prepend(&task2.list_node);
+    list.prepend(&task1.list_node);
+
+    // Выводим все задачи
+    std.debug.print("Tasks in the list:\n", .{});
+    list.printAll(Task, "list_node");
+}
+```
+
+В этом примере мы создали структуру `Task`, которая содержит поле `list_node` типа `ListNode`. При добавлении задачи в список мы передаем указатель на поле `list_node`, а не на всю структуру `Task`.
+
+Когда нам нужно получить информацию о задаче из узла списка, мы используем `@fieldParentPtr` для получения указателя на структуру `Task` из указателя на поле `list_node`. Это позволяет реализовать интрузивный список, который не требует дополнительного выделения памяти для узлов списка.
+
+Функция `@fieldParentPtr` предоставляет мощный механизм для работы со вложенными структурами в Zig. Она позволяет реализовать многие паттерны проектирования, которые обычно требуют более сложных языковых конструкций в других языках программирования. Однако при использовании `@fieldParentPtr` следует соблюдать осторожность, поскольку неправильное использование может привести к неопределенному поведению:
+
+1. **Проверяйте тип родительской структуры** - убедитесь, что тип, указанный в первом аргументе, соответствует фактическому типу родительской структуры.
+
+2. **Проверяйте имя поля** - убедитесь, что имя поля, указанное во втором аргументе, соответствует фактическому имени поля в родительской структуре.
+
+3. **Проверяйте указатель на поле** - убедитесь, что указатель, переданный в третьем аргументе, действительно указывает на поле родительской структуры.
+
+Для более безопасного использования `@fieldParentPtr` рекомендуется создавать вспомогательные функции или методы, которые абстрагируют вызов `@fieldParentPtr` и делают код более читаемым и менее подверженным ошибкам.
+
 ## Модификатор доступа для полей и методов структуры
 В Zig, ключевое слово `pub` (от англ. "public" - публичный) служит модификатором доступа, который определяет, видимы ли поля и методы структуры за её пределами. Это важный механизм для контроля доступа к данным и реализации инкапсуляции.
 
@@ -578,7 +831,6 @@ pub fn main() void {
 3. **Ясное намерение**: Использование структур как пространств имен явно показывает, что функции концептуально связаны, даже если они не разделяют общие данные.
 
 4. **Гибкость API**: Вы можете постепенно добавлять новые функции в пространство имен без необходимости менять существующий код.
-
 
 ## Заключение
 
