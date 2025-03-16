@@ -200,7 +200,7 @@ pub fn main() void {
 
 Обратите внимание, что методы `area()` и `perimeter()` принимают параметр `self` по значению, так как они только читают данные структуры. А метод `scale()` принимает `self` по указателю (`*Rectangle`), так как он изменяет поля структуры. Как Вы могли заметить параметр структуры, который мы передаем первым аргументом имеет наименование `self`. Это не обязательное требование, а просто соглашение и вы можете использовать любое другое имя, если хотите, например в нашем примере Вы можете использовать `rect` вместо `self`.
 
-Также как Вы могли заметить при вызове методов структуры мы используем точечную нотацию (`.`), чтобы вызвать методы структуры. Например, чтобы вызвать метод `area()` у структуры `Rectangle`, мы используем `rect.area()`. Это по сути синтаксический сахар для вызова метода структуры, но мы могли бы использовать и кклассический способ вызова функции `Rectangle.area(rect)`, но он менее удобен и не используется.
+Также как Вы могли заметить при вызове методов структуры мы используем точечную нотацию (`.`), чтобы вызвать методы структуры. Например, чтобы вызвать метод `area()` у структуры `Rectangle`, мы используем `rect.area()`. Это по сути "синтаксический сахар" для вызова метода структуры, но мы могли бы использовать и кклассический способ вызова функции `Rectangle.area(rect)`, но он менее удобен и не используется.
 
 В Zig указатели на структуры имеют особую особенность - вы можете использовать оператор `.` для доступа к полям структуры через указатель напрямую, без необходимости сначала разыменовывать указатель. В большинстве языков программирования для доступа к полям структуры через указатель используется специальный синтаксис (например, `->` в C/C++). В Zig используется тот же оператор `.` как для обычных экземпляров структур, так и для указателей на структуры:
 
@@ -239,7 +239,7 @@ pub fn main() void {
 
 ### Цепочка вызовов методов через указатель
 
-Поскольку в Zig можно использовать оператор `.` с указателями, это позволяет создавать цепочки вызовов методов (метод-чейнинг), что особенно полезно для создания текучих API:
+Поскольку в Zig можно использовать оператор `.` с указателями, это позволяет создавать цепочки вызовов методов (метод-чейнинг), что особенно полезно для создания реализации паттерна "Строитель":
 
 ```zig
 const std = @import("std");
@@ -253,19 +253,13 @@ const StringBuilder = struct {
     }
 
     pub fn append(self: *StringBuilder, text: []const u8) *StringBuilder {
-        std.mem.copy(u8, self.buffer[self.length..], text);
+        std.mem.copyForwards(u8, self.buffer[self.length..], text);
         self.length += text.len;
         return self; // Возвращаем указатель на self
     }
 
     pub fn appendInt(self: *StringBuilder, value: i32) *StringBuilder {
-        const written = std.fmt.formatIntBuf(
-            self.buffer[self.length..],
-            value,
-            10,
-            .lower,
-            .{}
-        );
+        const written = std.fmt.formatIntBuf(self.buffer[self.length..], value, 10, .lower, .{});
         self.length += written;
         return self; // Возвращаем указатель на self
     }
@@ -405,15 +399,14 @@ pub fn main() void {
 
 Одной из мощных встроенных функций в Zig является `@fieldParentPtr`, которая позволяет получить указатель на родительскую структуру по указателю на одно из ее полей. Эта функция особенно полезна при реализации сложных структур данных, обработчиков событий и компонентно-ориентированных архитектур.
 
-Функция `@fieldParentPtr` принимает три аргумента:
-1. Тип родительской структуры
-2. Имя поля как строковый литерал
-3. Указатель на поле структуры
+Функция `@fieldParentPtr` принимает два аргумента:
+1. Имя поля как строковый литерал
+2. Указатель на поле структуры
 
 Она возвращает указатель на родительскую структуру. Синтаксис:
 
 ```zig
-@fieldParentPtr(ParentType, "field_name", field_pointer)
+@fieldParentPtr("field_name", field_pointer)
 ```
 
 Одним из наиболее распространенных применений `@fieldParentPtr` является реализация обработчиков событий или callback-функций. Рассмотрим пример с простой системой обработки событий:
@@ -425,7 +418,7 @@ const Allocator = std.mem.Allocator;
 // Определение типа обработчика событий
 const EventHandler = struct {
     // Указатель на функцию обработки событий
-    handleFn: fn (handler: *EventHandler, event: []const u8) void,
+    handleFn: *const fn (handler: *EventHandler, event: []const u8) void,
 
     // Обработка события
     pub fn handle(self: *EventHandler, event: []const u8) void {
@@ -459,8 +452,8 @@ const Button = struct {
     fn buttonHandleEvent(handler: *EventHandler, event: []const u8) void {
         // Получаем указатель на родительскую структуру Button
         // из указателя на вложенное поле event_handler
-        const button = @fieldParentPtr(Button, "event_handler", handler);
-        std.debug.print("Event '{s}' handled by button '{s}'\n", .{event, button.label});
+        const button: *Button = @fieldParentPtr("event_handler", handler);
+        std.debug.print("Event '{s}' handled by button '{s}'\n", .{ event, button.label });
     }
 };
 
@@ -520,18 +513,17 @@ const Person = struct {
 
     // Функция-помощник для получения указателя на Person из NamedMixin
     pub fn fromNamed(named: *NamedMixin) *Person {
-        return @fieldParentPtr(Person, "named_part", named);
+        return @alignCast(@fieldParentPtr("named_part", named));
     }
 
     // Функция-помощник для получения указателя на Person из AgedMixin
     pub fn fromAged(aged: *AgedMixin) *Person {
-        return @fieldParentPtr(Person, "aged_part", aged);
+        return @alignCast(@fieldParentPtr("aged_part", aged));
     }
 
     // Метод, использующий обе примеси
     pub fn introduce(self: *Person) void {
-        std.debug.print("Hello, my name is {s} and I am {d} years old.\n",
-            .{ self.named_part.getName(), self.aged_part.getAge() });
+        std.debug.print("Hello, my name is {s} and I am {d} years old.\n", .{ self.named_part.getName(), self.aged_part.getAge() });
 
         if (self.aged_part.isAdult()) {
             std.debug.print("I am an adult.\n", .{});
@@ -550,11 +542,11 @@ pub fn main() void {
     std.debug.print("Age: {d}\n", .{person.aged_part.getAge()});
 
     // Демонстрация использования функций-помощников
-    var named_ref = &person.named_part;
+    const named_ref = &person.named_part;
     var person_from_named = Person.fromNamed(named_ref);
     std.debug.print("Retrieved person's age: {d}\n", .{person_from_named.aged_part.getAge()});
 
-    var aged_ref = &person.aged_part;
+    const aged_ref = &person.aged_part;
     var person_from_aged = Person.fromAged(aged_ref);
     std.debug.print("Retrieved person's name: {s}\n", .{person_from_aged.named_part.getName()});
 }
@@ -600,7 +592,7 @@ const IntrusiveList = struct {
         var current = self.head;
         while (current) |node| {
             // Получаем родительскую структуру из узла
-            const item = @fieldParentPtr(T, field_name, node);
+            const item: *T = @fieldParentPtr(field_name, node);
             std.debug.print("{any}\n", .{item.*});
             current = node.next;
         }
@@ -646,11 +638,9 @@ pub fn main() void {
 
 Функция `@fieldParentPtr` предоставляет мощный механизм для работы со вложенными структурами в Zig. Она позволяет реализовать многие паттерны проектирования, которые обычно требуют более сложных языковых конструкций в других языках программирования. Однако при использовании `@fieldParentPtr` следует соблюдать осторожность, поскольку неправильное использование может привести к неопределенному поведению:
 
-1. **Проверяйте тип родительской структуры** - убедитесь, что тип, указанный в первом аргументе, соответствует фактическому типу родительской структуры.
-
-2. **Проверяйте имя поля** - убедитесь, что имя поля, указанное во втором аргументе, соответствует фактическому имени поля в родительской структуре.
-
-3. **Проверяйте указатель на поле** - убедитесь, что указатель, переданный в третьем аргументе, действительно указывает на поле родительской структуры.
+* **Проверяйте тип родительской структуры** - убедитесь, что тип, указанный в первом аргументе, соответствует фактическому типу родительской структуры.
+* **Проверяйте имя поля** - убедитесь, что имя поля, указанное во втором аргументе, соответствует фактическому имени поля в родительской структуре.
+* **Проверяйте указатель на поле** - убедитесь, что указатель, переданный в третьем аргументе, действительно указывает на поле родительской структуры.
 
 Для более безопасного использования `@fieldParentPtr` рекомендуется создавать вспомогательные функции или методы, которые абстрагируют вызов `@fieldParentPtr` и делают код более читаемым и менее подверженным ошибкам.
 
