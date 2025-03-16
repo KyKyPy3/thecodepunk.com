@@ -109,9 +109,9 @@ const Allocator = std.mem.Allocator;
 
 const DynamicArray = struct {
     data: []i32,
-    allocator: *Allocator,
+    allocator: Allocator,
 
-    pub fn init(allocator: *Allocator, size: usize) !DynamicArray {
+    pub fn init(allocator: Allocator, size: usize) !DynamicArray {
         const data = try allocator.alloc(i32, size);
         return DynamicArray{
             .data = data,
@@ -125,16 +125,16 @@ const DynamicArray = struct {
 };
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa = std.heap.GeneralPurposeAllocator(.{}).init;
     defer _ = gpa.deinit();
-    const allocator = &gpa.allocator;
+    const allocator = gpa.allocator();
 
     var array = try DynamicArray.init(allocator, 10);
     defer array.deinit();
 
     // Работа с массивом...
     for (0..array.data.len) |i| {
-        array.data[i] = @intCast(i32, i) * 2;
+        array.data[i] = @as(i32, @intCast(i)) * 2;
     }
 
     std.debug.print("Array: ", .{});
