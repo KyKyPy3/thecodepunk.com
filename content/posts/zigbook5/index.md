@@ -415,23 +415,19 @@ pub fn main() void {
 const std = @import("std");
 
 fn foo() !void {
-  defer std.debug.print(
-      "Exiting function ...\n", .{}
-  );
+    defer std.debug.print("Exiting function ...\n", .{});
 
-  try stdout.print("Execute function body\n", .{});
+    std.debug.print("Execute function body\n", .{});
 
-  {
-    defer std.debug.print(
-        "Exiting function nested block ...\n", .{}
-    );
+    {
+        defer std.debug.print("Exiting function nested block ...\n", .{});
 
-    try stdout.print("Execute function nested block\n", .{});
-  }
+        std.debug.print("Execute function nested block\n", .{});
+    }
 }
 
 pub fn main() !void {
-  try foo();
+    try foo();
 }
 ```
 
