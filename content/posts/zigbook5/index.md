@@ -243,18 +243,18 @@ const std = @import("std");
 
 pub fn main() void {
     var array = [5]i32{ 10, 20, 30, 40, 50 };
-    const ptr: *i32 = &array[0]; // Указатель на первый элемент
+    const ptr: [*]i32 = &array; // Указатель на первый элемент
 
     const newPtr = ptr + 2; // Перемещаем указатель на 2 элемента вперед
 
-    std.debug.print("Value: {}\n", .{newPtr.*}); // Вывод: Value: 30
+    std.debug.print("Value: {}\n", .{newPtr[0]}); // Вывод: Value: 30
 }
 ```
 
 В этом примере:
 * ptr указывает на первый элемент массива.
 * ptr + 2 перемещает указатель на третий элемент массива.
-* newPtr.* разыменовывает указатель и возвращает значение 30.
+* newPtr[0] разыменовывает указатель и возвращает значение 30.
 
 Вычитание целого числа из указателя перемещает указатель назад на указанное количество элементов. Вычитание двух указателей возвращает количество элементов между ними. Результат имеет тип `isize` (знаковое целое число).
 
@@ -284,13 +284,13 @@ const std = @import("std");
 
 pub fn main() void {
     var array = [5]i32{ 10, 20, 30, 40, 50 };
-    var ptr: *i32 = &array[0]; // Указатель на первый элемент
+    var ptr: [*]i32 = &array; // Указатель на первый элемент
 
     ptr += 2; // Перемещаем указатель на третий элемент
-    std.debug.print("Value after increment: {}\n", .{ptr.*}); // Вывод: Value after increment: 30
+    std.debug.print("Value after increment: {}\n", .{ptr[0]}); // Вывод: Value after increment: 30
 
     ptr -= 1; // Перемещаем указатель на второй элемент
-    std.debug.print("Value after decrement: {}\n", .{ptr.*}); // Вывод: Value after decrement: 20
+    std.debug.print("Value after decrement: {}\n", .{ptr[0]}); // Вывод: Value after decrement: 20
 }
 ```
 
@@ -317,11 +317,11 @@ const std = @import("std");
 
 pub fn main() void {
     var array = [3]i32{ 10, 20, 30 };
-    const ptr: *i32 = &array[0]; // Указатель на первый элемент
+    const ptr: [*]i32 = &array; // Указатель на первый элемент
 
     // Опасная операция: выход за границы массива
     const dangerousPtr = ptr + 5; // Указывает на область памяти за пределами массива
-    const value = dangerousPtr.*; // Чтение из непредназначенной области памяти
+    const value = dangerousPtr[0]; // Чтение из непредназначенной области памяти
 
     std.debug.print("Value: {}\n", .{value}); // Неопределенное поведение!
 }
@@ -341,11 +341,11 @@ const std = @import("std");
 
 pub fn main() void {
     var array = [3]i32{ 10, 20, 30 };
-    const ptr: *i32 = &array[0];
+    const ptr: [*]i32 = &array;
 
     const index = 5;
     if (index < array.len) {
-        const value = (ptr + index).*;
+        const value = (ptr + index)[0];
         std.debug.print("Value: {}\n", .{value});
     } else {
         std.debug.print("Index out of bounds!\n", .{});
@@ -355,28 +355,6 @@ pub fn main() void {
 
 В этом примере:
 * Мы проверяем, что index меньше длины массива, прежде чем разыменовывать указатель.
-
-Zig предоставляет встроенные функции, такие как `@ptrOffset`, которые могут помочь в безопасной работе с указателями.
-
-```zig
-const std = @import("std");
-
-pub fn main() void {
-    var array = [3]i32{ 10, 20, 30 };
-    const ptr: *i32 = &array[0];
-
-    const offset = 2;
-    if (offset < array.len) {
-        const newPtr = @ptrOffset(ptr, offset); // Безопасное смещение указателя
-        std.debug.print("Value: {}\n", .{newPtr.*});
-    } else {
-        std.debug.print("Offset out of bounds!\n", .{});
-    }
-}
-```
-
-В этом примере:
-* @ptrOffset позволяет безопасно смещать указатель, если вы уверены, что не выйдете за границы.
 
 ## Аллокаторы
 Как уже упоминалось во введении, Zig следует принципу полного контроля над выделением памяти. Это означает, что никакие встроенные механизмы не выделяют память в куче автоматически — всё происходит только явно. В отличие, например, от C, где функции могут использовать `malloc` и `free` скрытно, и чтобы понять, выделяет ли встроенная функция дополнительную память, приходится заглядывать в ее исходный код, в Zig такой проблемы нет, здесь любое выделение памяти всегда явно указано.
