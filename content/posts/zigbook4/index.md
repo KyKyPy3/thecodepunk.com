@@ -225,7 +225,7 @@ const std = @import("std");
 
 pub fn main() !void {
     // Получаем аллокатор общего назначения
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa = std.heap.GeneralPurposeAllocator(.{}).init;
     defer _ = gpa.deinit(); // Освобождаем ресурсы аллокатора при выходе
     const allocator = gpa.allocator();
 
