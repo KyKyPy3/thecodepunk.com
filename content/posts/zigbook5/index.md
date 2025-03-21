@@ -543,10 +543,10 @@ Zig предоставляет несколько встроенных алло�
 const std = @import("std");
 
 pub fn main() void {
-    var gpa = std.heap.DebugAllocator(.{}).init; // Создаем аллокатор
-    defer std.debug.print("Allocator memory status: {}\n", .{gpa.deinit()}); // Проверяем утечки памяти
+    var debug = std.heap.DebugAllocator(.{}).init; // Создаем аллокатор
+    defer std.debug.print("Allocator memory status: {}\n", .{debug.deinit()}); // Проверяем утечки памяти
 
-    const allocator = gpa.allocator(); // Получаем из него интерфейс std.mem.Allocator
+    const allocator = debug.allocator(); // Получаем из него интерфейс std.mem.Allocator
 
     // Выделяем память для строки
     const str = allocator.alloc(u8, 10) catch unreachable;
