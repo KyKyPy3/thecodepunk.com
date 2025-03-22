@@ -46,6 +46,8 @@ pub fn main() !void {
 
     std.debug.print("Number {}\n", .{tuple[0]});
     std.debug.print("Bool {}\n", .{tuple[1]});
+
+    std.debug.print("Tuple len {}\n", .{tuple.len});
 }
 ```
 
@@ -65,5 +67,77 @@ pub fn main() !void {
 ```
 
 Конечно второй вариант выглядит менее естественно и обычно все же используют обращение к полям кортежа с помощью числовых индексов.
+
+Для доступа к элементам кортежа мы также можем использовать цикл `inline for` или деструктуризацию кортежа. Использовать обычный цикл `for` с кортежами нельзя, так как для доступа к кортежам используется механизм рефлексии на этапе компиляции:
+
+```zig
+const std = @import("std");
+
+pub fn main() !void {
+    const tuple: struct { u8, bool } = .{ 42, true };
+
+    inline for (tuple) |item| {
+        std.debug.print("Item {}\n", .{item});
+    }
+
+    const number, const boolean = tuple;
+    std.debug.print("Number {}\n", .{number});
+    std.debug.print("Bool {}\n", .{boolean});
+}
+```
+
+Этот код выведет:
+
+```
+Item 42
+Item true
+Number 42
+Bool true
+```
+
+Обращение к элементам через деструктуризацию наверно самый популярный способ использование кортежей и чаще всего вы будете встречать именно его в коде.
+
+Если у вас есть указатель на кортеж, то как и в случае массивов вы можете использовать стандартный метод доступа к элементам кортежа через `[]` используя указатель:
+
+```zig
+const std = @import("std");
+
+pub fn main() !void {
+    const tuple: struct { u8, bool } = .{ 42, true };
+    const ptr = &tuple;
+
+    std.debug.print("Number {}\n", .{ptr[0]});
+    std.debug.print("Bool {}\n", .{ptr[1]});
+}
+```
+
+Выведет:
+
+```
+Number 42
+Bool true
+```
+
+## Объединение кортежей
+Так как кортежи похожи на массивы мы также как и массивы можем объединять их с помощью оператора `++`:
+
+```zig
+const std = @import("std");
+
+pub fn main() !void {
+    const tuple1: struct { u8, bool } = .{ 42, true };
+    const tuple2: struct { u8, bool } = .{ 24, false };
+
+    const combined = tuple1 ++ tuple2;
+
+    std.debug.print("Combined tuple {any}\n", .{combined});
+}
+```
+
+Выведет:
+
+```
+Combined tuple { 42, true, 24, false }
+```
 
 ## Пустые структуры
