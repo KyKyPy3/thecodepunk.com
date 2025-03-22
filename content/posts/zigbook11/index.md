@@ -409,11 +409,12 @@ const CStruct = extern struct {
 
 pub fn main() void {
     std.debug.print("Zig normal struct size: {}\n", .{@sizeOf(NormalStruct)});
-    std.debug.print("Zig normal struct offsets: a={}, b={}, c={}\n\n", .{
+    std.debug.print("Zig normal struct offsets: a={}, b={}, c={}\n", .{
         @offsetOf(NormalStruct, "a"),
         @offsetOf(NormalStruct, "b"),
         @offsetOf(NormalStruct, "c"),
     });
+    std.debug.print("Align of struct: {}\n\n", .{@alignOf(NormalStruct)});
 
     std.debug.print("Zig extern struct size: {}\n", .{@sizeOf(CStruct)});
     std.debug.print("Zig extern struct offsets: a={}, b={}, c={}\n", .{
@@ -421,6 +422,7 @@ pub fn main() void {
         @offsetOf(CStruct, "b"),
         @offsetOf(CStruct, "c"),
     });
+    std.debug.print("Align of extern struct: {}\n", .{@alignOf(CStruct)});
 }
 ```
 
@@ -429,9 +431,11 @@ pub fn main() void {
 ```
 Zig normal struct size: 8
 Zig normal struct offsets: a=6, b=0, c=4
+Align of struct: 4
 
 Zig extern struct size: 12
 Zig extern struct offsets: a=0, b=4, c=8
+Align of extern struct: 4
 ```
 
 Результаты выполнения этих программ показывают, что размер и смещения полей в extern-структуре Zig точно совпадают с соответствующими параметрами структуры в C, в то время как обычная структура Zig может иметь другие смещения полей из-за оптимизации компилятора.
@@ -518,36 +522,34 @@ const PackedExample = packed struct {
 const std = @import("std");
 
 const RegularStruct = struct {
-    a: u8,    // 1 байт
-    b: u32,   // 4 байта
-    c: u16,   // 2 байта
+    a: u8, // 1 байт
+    b: u32, // 4 байта
+    c: u16, // 2 байта
 };
 
 const PackedStruct = packed struct {
-    a: u8,    // 1 байт
-    b: u32,   // 4 байта
-    c: u16,   // 2 байта
+    a: u8, // 1 байт
+    b: u32, // 4 байта
+    c: u16, // 2 байта
 };
 
 pub fn main() void {
-    std.debug.print("Regular struct - size: {}, align: {}\n",
-        .{@sizeOf(RegularStruct), @alignOf(RegularStruct)});
-    std.debug.print("Packed struct - size: {}, align: {}\n",
-        .{@sizeOf(PackedStruct), @alignOf(PackedStruct)});
+    std.debug.print("Regular struct - size: {}, align: {}\n", .{ @sizeOf(RegularStruct), @alignOf(RegularStruct) });
+    std.debug.print("Align of RegularStruct: {}\n", .{@alignOf(RegularStruct)});
+    std.debug.print("Packed struct - size: {}, align: {}\n", .{ @sizeOf(PackedStruct), @alignOf(PackedStruct) });
+    std.debug.print("Align of PackedStruct: {}\n", .{@alignOf(PackedStruct)});
 
-    std.debug.print("\nRegular struct offsets: a={}, b={}, c={}\n",
-        .{
-            @offsetOf(RegularStruct, "a"),
-            @offsetOf(RegularStruct, "b"),
-            @offsetOf(RegularStruct, "c"),
-        });
+    std.debug.print("\nRegular struct offsets: a={}, b={}, c={}\n", .{
+        @offsetOf(RegularStruct, "a"),
+        @offsetOf(RegularStruct, "b"),
+        @offsetOf(RegularStruct, "c"),
+    });
 
-    std.debug.print("Packed struct offsets: a={}, b={}, c={}\n",
-        .{
-            @offsetOf(PackedStruct, "a"),
-            @offsetOf(PackedStruct, "b"),
-            @offsetOf(PackedStruct, "c"),
-        });
+    std.debug.print("Packed struct offsets: a={}, b={}, c={}\n", .{
+        @offsetOf(PackedStruct, "a"),
+        @offsetOf(PackedStruct, "b"),
+        @offsetOf(PackedStruct, "c"),
+    });
 }
 ```
 
@@ -555,13 +557,15 @@ pub fn main() void {
 
 ```
 Regular struct - size: 8, align: 4
+Align of RegularStruct: 4
 Packed struct - size: 8, align: 8
+Align of PackedStruct: 8
 
 Regular struct offsets: a=6, b=0, c=4
 Packed struct offsets: a=0, b=1, c=5
 ```
 
-Как видно из результатов, в упакованной структуре поля располагаются строго друг за другом без какого-либо выравнивания. Но при этом размеры нашей обычной структуры и упакованной одинаковы. Все дело в том что компилятор Zig добавил в конец упакованной структуры дополнительные байты для обеспечения выравнивания.
+Как видно из результатов, в упакованной структуре поля располагаются строго друг за другом без какого-либо выравнивания. Но при этом размеры нашей обычной структуры и упакованной одинаковы, однако варавнивание структур отличаются - упакованная структура имеет выравнивание равное 8. Все дело в том что компилятор Zig добавил в конец упакованной структуры дополнительные байты для обеспечения выравнивания.
 
 ### Поддержка битовых полей
 Одно из самых мощных свойств упакованных структур — возможность определять битовые поля, размер которых меньше байта:
@@ -570,11 +574,11 @@ Packed struct offsets: a=0, b=1, c=5
 const std = @import("std");
 
 const Flags = packed struct {
-    read: bool,     // 1 бит
-    write: bool,    // 1 бит
-    execute: bool,  // 1 бит
+    read: bool, // 1 бит
+    write: bool, // 1 бит
+    execute: bool, // 1 бит
     // Используем точное количество бит
-    reserved: u5,   // 5 бит
+    reserved: u5, // 5 бит
 };
 
 pub fn main() void {
@@ -587,8 +591,7 @@ pub fn main() void {
         .reserved = 0,
     };
 
-    std.debug.print("Permissions: read={}, write={}, execute={}\n",
-        .{flags.read, flags.write, flags.execute});
+    std.debug.print("Permissions: read={}, write={}, execute={}\n", .{ flags.read, flags.write, flags.execute });
 
     // Изменяем значения
     flags.execute = true;
@@ -597,6 +600,15 @@ pub fn main() void {
     // Преобразуем в байт для просмотра битового представления
     const as_byte: u8 = @bitCast(flags);
     std.debug.print("Flags as byte: 0b{b:0>8}\n", .{as_byte});
+
+    const info = @typeInfo(Flags);
+
+    inline for (info.@"struct".fields) |field| {
+        std.debug.print("Field: {s}\n", .{field.name});
+        std.debug.print("Field size: {}\n", .{@sizeOf(field.type)});
+        std.debug.print("Field offset: {}\n", .{@offsetOf(Flags, field.name)});
+        std.debug.print("Field align: {}\n\n", .{field.alignment});
+    }
 }
 ```
 
@@ -606,6 +618,25 @@ pub fn main() void {
 Size of Flags: 1 byte(s)
 Permissions: read=true, write=true, execute=false
 Flags as byte: 0b11000111
+Field: read
+Field size: 1
+Field offset: 0
+Field align: 0
+
+Field: write
+Field size: 1
+Field offset: 0
+Field align: 0
+
+Field: execute
+Field size: 1
+Field offset: 0
+Field align: 0
+
+Field: reserved
+Field size: 1
+Field offset: 0
+Field align: 0
 ```
 
 В представленном примере мы создаём структуру `Flags`, содержащую всего три значимых бита для хранения разрешений:
@@ -617,6 +648,8 @@ Flags as byte: 0b11000111
 Такой подход позволяет компактно хранить и передавать информацию о правах доступа в бинарном формате. Дополнительно мы используем пятибитовое поле `reserved` для заполнения структуры до полного байта (8 бит).
 
 Мы демонстрируем преобразование нашей битовой структуры в стандартный байт с помощью функции `@bitCast`, после чего выводим его битовое представление для наглядности. Такая визуализация позволяет убедиться в правильном расположении битов.
+
+Важно отметить, что в выводе нашей программы видно, что у упакованных структур отсутствует выравнивание полей, там всегда будет значение 0. Это как раз говорит нам о том, что компилятор не пытается выравнивать такие структуры, а только добавляет выравнивание всей структуры после всех полей.
 
 Давайте рассмотрим какие преимущества дают нам упакованные структуры, а также какие ограничения они имеют.
 
