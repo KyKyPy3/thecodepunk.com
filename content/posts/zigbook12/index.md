@@ -304,6 +304,225 @@ pub fn main() !void {
 Как мы видим, создание обобщённых типов или функций в Zig выполняется довольно просто и интуитивно. Для этого не требуется изучать дополнительный язык (как, например, макросы в Rust) или осваивать сложные концепции. Всё, что нужно, — это использовать встроенные возможности Zig, такие как `comptime` и обобщённые типы, чтобы писать гибкий и типобезопасный код. Это делает Zig мощным и удобным инструментом для создания универсальных и эффективных структур данных.
 
 ### Метапрограммирование
+Метапрограммирование — это техника, при которой программы создают или модифицируют другие программы (или самих себя) во время выполнения или на этапе компиляции. В Zig метапрограммирование реализуется с помощью ключевого слова comptime, которое позволяет выполнять код на этапе компиляции. Мы уже видели некоторые примеры генерации кода программы во время компиляции когда рассматривали примеры заполнения массива начальными значениями, используя comptime функции или когда рассматривали пример использования карированной функции:
+
+```zig
+const std = @import("std");
+
+fn makeAdder(comptime n: i32) fn (i32) i32 {
+    return struct {
+        fn add(x: i32) i32 {
+            return x + n;
+        }
+    }.add;
+}
+
+pub fn main() void {
+    const addFive = makeAdder(5);
+    const result = addFive(10); // result = 15
+
+    std.debug.print("Result: {d}\n", .{result});
+}
+```
+
+Но это не единственные случаи метапрограммирования в Zig. Например, мы можем использовать comptime функции для генерации кода на основе конфигурации или для создания типов на основе данных, полученных во время компиляции. Давайте рассмотрим следующую задачу - предположим у нас есть код обрабатывающий события в нашей программе и он выглядит следующим образом:
+
+```zig
+pub const Event = union(enum) {
+  open_site: void,
+  close_site: void,
+  close_all_sites: void,
+  open_config: void,
+  reload_config: void,
+  // и еще огромное количество других типов событий
+};
+
+pub fn printEvent(event: Event) void {
+    std.debug.print("Event printed {}\n", .{event});
+}
+
+pub fn processEvent(event: Event) void {
+  switch (event) {
+    .open_site => ...,
+    .close_site => ...,
+    .close_all_sites => ...,
+    .open_config => ...,
+    .reload_config => ...,
+  }
+}
+```
+
+В нашем примере у нас есть маркированное объединение (tagged union), которое содержит события, происходящие в нашей программе. Также у нас есть функция, которая обрабатывает эти события, и функция, которая записывает выполненное событие в лог. Теперь предположим, что я решил обрабатывать события не только для всего приложения, но и для открытой страницы сайта. Для этого я хочу заменить функцию processEvent на две отдельные функции: processAppEvent и processSiteEvent. Однако я не хочу изменять остальной код, который уже работает с объединением Event.
+
+Если не знать о возможностях comptime в Zig, то у нас есть два варианта:
+
+Добавление else в каждую функцию: В каждой функции мы можем обработать только те события, которые нам интересны, а для остальных добавить ветку else, чтобы игнорировать их. Это простое решение, но оно может привести к дублированию кода и усложнению его поддержки.
+Перечисление всех событий и использование unreachable: В каждой функции мы можем явно перечислить все события, а для тех, которые не нужно обрабатывать, добавить unreachable. Это гарантирует, что компилятор будет знать, что эти случаи никогда не должны происходить, но такой подход требует больше ручной работы и может быть подвержен ошибкам.
+
+Оба варианта имеют свои недостатки: либо я пишу много лишнего кода, либо нарушаю типобезопасность, как в случае с добавлением else. Давайте попробуем решить эту задачу, используя возможности comptime в Zig.
+
+Для начала добавим перечисление Context, которое будет содержать список контекстов, в которых может выполняться событие. Затем расширим наше объединение Event, добавив в него функцию context. Эта функция будет определять, к какому контексту относится каждое событие, и "раскладывать" события по соответствующим контекстам:
+
+```zig
+pub const Context = enum { app, window };
+
+pub const Event = union(enum) {
+    open_site: void,
+    close_site: void,
+    close_all_sites: void,
+    open_config: void,
+    reload_config: void,
+    scroll_lines: i16,
+    close_window: void,
+    activate_window: void,
+    // и еще огромное количество других типов событий
+
+    pub fn scope(event: Event) Scope {
+        return switch (event) {
+            .open_site, .close_site, .close_all_sites, .open_config, .reload_config => .app,
+            .scroll_lines, .close_window, .activate_window => .window,
+        };
+    }
+};
+```
+
+Теперь начинается основная магия возможностей Zig - нам нужно написать функцию, которая будет из нашего типа `Event` создавать тип, содержащий только варианты для конкретного контекста:
+
+```zig
+pub fn ContextEvent(comptime s: Context) type {
+    const all_fields = @typeInfo(Event).@"union".fields;
+
+    // Find all fields that are scoped to s
+    var i: usize = 0;
+    var union_fields: [all_fields.len]std.builtin.Type.UnionField = undefined;
+    var enum_fields: [all_fields.len]std.builtin.Type.EnumField = undefined;
+    for (all_fields) |field| {
+        const action = @unionInit(Event, field.name, undefined);
+        if (action.context() == s) {
+            union_fields[i] = field;
+            enum_fields[i] = .{ .name = field.name, .value = i };
+            i += 1;
+        }
+    }
+
+    // Build our union
+    return @Type(.{ .@"union" = .{
+        .layout = .auto,
+        .tag_type = @Type(.{ .@"enum" = .{
+            .tag_type = std.math.IntFittingRange(0, i),
+            .fields = enum_fields[0..i],
+            .decls = &.{},
+            .is_exhaustive = true,
+        } }),
+        .fields = union_fields[0..i],
+        .decls = &.{},
+    } });
+}
+```
+Давайте разберём, как работает наша "магическая" функция. С помощью уже знакомой встроенной функции @typeInfo мы получаем информацию о нашем типе. Эта информация включает, среди прочего, список полей, которые содержатся в нашем объединении (union).
+
+Затем мы перебираем все поля объединения и проверяем, принадлежит ли каждое поле нашему контексту. Если поле принадлежит нужному контексту, мы сохраняем его.
+
+Для создания значения объединения мы используем функцию @unionInit. Она создаёт значение объединения, используя известное на этапе компиляции имя поля и значение. В нашем случае значением является undefined (неинициализированная память), так как нам важно только имя поля (тег), а не само значение. Это связано с тем, что наша функция context анализирует только тег объединения, а не его содержимое.
+
+Наконец, встроенная функция @Type создаёт новый тип. В данном случае мы создаём новое объединение, используя только те поля, которые мы отфильтровали и сохранили на предыдущих шагах.
+
+Таким образом, наша функция динамически создаёт новое объединение, содержащее только те поля, которые соответствуют заданному контексту. Давайте теперь посмотрим на полную версию кода:
+
+```zig
+const std = @import("std");
+
+pub const Context = enum { app, window };
+
+pub fn printEvent(event: Event) void {
+    std.debug.print("Event printed {}\n", .{event});
+}
+
+pub fn ContextEvent(comptime s: Context) type {
+    const all_fields = @typeInfo(Event).@"union".fields;
+
+    // Find all fields that are scoped to s
+    var i: usize = 0;
+    var union_fields: [all_fields.len]std.builtin.Type.UnionField = undefined;
+    var enum_fields: [all_fields.len]std.builtin.Type.EnumField = undefined;
+    for (all_fields) |field| {
+        const action = @unionInit(Event, field.name, undefined);
+        if (action.context() == s) {
+            union_fields[i] = field;
+            enum_fields[i] = .{ .name = field.name, .value = i };
+            i += 1;
+        }
+    }
+
+    // Build our union
+    return @Type(.{ .@"union" = .{
+        .layout = .auto,
+        .tag_type = @Type(.{ .@"enum" = .{
+            .tag_type = std.math.IntFittingRange(0, i),
+            .fields = enum_fields[0..i],
+            .decls = &.{},
+            .is_exhaustive = true,
+        } }),
+        .fields = union_fields[0..i],
+        .decls = &.{},
+    } });
+}
+
+pub const Event = union(enum) {
+    open_site: void,
+    close_site: void,
+    close_all_sites: void,
+    open_config: void,
+    reload_config: void,
+    scroll_lines: i16,
+    close_window: void,
+    activate_window: void,
+    // и еще огромное количество других типов событий
+
+    pub fn context(event: Event) Context {
+        return switch (event) {
+            .open_site, .close_site, .close_all_sites, .open_config, .reload_config => .app,
+            .scroll_lines, .close_window, .activate_window => .window,
+        };
+    }
+};
+
+pub fn processAppEvent(action: ContextEvent(.app)) void {
+    switch (action) {
+        .open_site => std.debug.print("Opening site...\n", .{}),
+        .close_site => std.debug.print("Closing site...\n", .{}),
+        .close_all_sites => std.debug.print("Closing all sites...\n", .{}),
+        .open_config => std.debug.print("Opening config...\n", .{}),
+        .reload_config => std.debug.print("Reloading config...\n", .{}),
+    }
+}
+
+pub fn processWindowEvent(event: ContextEvent(.window)) void {
+    switch (event) {
+        .scroll_lines => |amount| std.debug.print("Scrolling {} lines...\n", .{amount}),
+        .close_window => std.debug.print("Closing window...\n", .{}),
+        .activate_window => std.debug.print("Activating window...\n", .{}),
+    }
+}
+
+pub fn main() void {
+    printEvent(.open_site);
+    processAppEvent(.open_site);
+
+    printEvent(.close_window);
+    processWindowEvent(.close_window);
+}
+```
+
+Если мы запустим этот код, то увидим:
+
+```
+Event printed main.Event{ .open_site = void }
+Opening site...
+Event printed main.Event{ .close_window = void }
+Closing window...
+```
+
 ### Рефлексия кода
 
 ## Заключение
