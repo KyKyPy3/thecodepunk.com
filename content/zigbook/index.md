@@ -19,7 +19,7 @@ class: zigbook
 #### Расширенное использование
 * [Выравнивание данных]({{% ref "posts/zigbook11" %}})
 * [Выполнение кода на этапе компиляции (comptime)]({{% ref "posts/zigbook12" %}})
-* Интерфейсы
+* [Интерфейсы]({{% ref "posts/zigbook13" %}})
 * Модули
 * HashMap, ArrayList
 * Тестирование
