@@ -27,7 +27,9 @@ class: zigbook
 * [Выполнение кода на этапе компиляции (comptime)]({{% ref "posts/zigbook12" %}})
 * [Интерфейсы]({{% ref "posts/zigbook13" %}})
 * [Модули]({{% ref "posts/zigbook14" %}})
-* HashMap, ArrayList
+* HashMap
+* ArrayList, MultiArrayList
+* Заимствование и владение
 * Тестирование
 * Сборка проекта
 * Взаимодействие с C
