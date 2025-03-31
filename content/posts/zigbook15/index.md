@@ -318,7 +318,9 @@ run
    └─ install
       └─ install simple
          └─ zig build-exe simple Debug native 1 errors
-/Users/roman/.zvm/0.14.0/lib/std/hash/auto_hash.zig:192:9: error: std.hash.autoHash does not allow slices as well as unions and structs containing slices here (main.User) because the intent is unclear. Consider using std.hash.autoHashStrat or providing your own hash function instead.
+/Users/roman/.zvm/0.14.0/lib/std/hash/auto_hash.zig:192:9: error: std.hash.autoHash does not allow slices as well as unions and
+structs containing slices here (main.User) because the intent is unclear. Consider using std.hash.autoHashStrat or providing
+your own hash function instead.
 ```
 
 Но почему вдруг наш код перестал компилироваться? Это связано с тем, что структура `User` содержит поле name, которое является срезом (slice) типа u8. Срезы не могут быть использованы в качестве ключей в `AutoHashMap`, так как их хэш-функция не может быть сгенерирована однозначно. Так как строки это по сути указатели на области памяти, то тут сразу возникает вопрос что означает "строки равны". Можем ли мы считать, что строки равные если равны их длины и содержимое, или нам нужно чтобы адреса, по которым располагаются строки были одинаковыми. Чтобы работа хеш-таблицы не приводила к неожиданному поведению, некоторые типы данных нельзя использовать с `AutoHashMap`. В этом случае, либо можно использовать специализированный тип хеш-таблицы, либо самому определеить функции `hash` и `eql` для нашего типа `User`.
