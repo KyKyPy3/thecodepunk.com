@@ -1,5 +1,5 @@
 ---
-title: HashMap
+title: Хеш-карты (HashMap)
 date: 2025-03-26 15:00:00
 showTableOfContents: true
 showComments: true
