@@ -429,7 +429,7 @@ const std = @import("std");
 
 const User = struct {
     id: i32,
-    age: i32,
+    name: []const u8,
 };
 
 pub fn main() !void {
@@ -440,8 +440,8 @@ pub fn main() !void {
     var map = std.AutoHashMap(i32, User).init(allocator);
     defer map.deinit();
 
-    try map.put(1, .{ .id = 1, .age = 33 });
-    try map.put(2, .{ .id = 2, .age = 21 });
+    try map.put(1, .{ .id = 1, .name = "Alice" });
+    try map.put(2, .{ .id = 2, .name = "Bob" });
 
     std.debug.print("Hashmap contains: {d}\n", .{map.count()});
 
@@ -451,7 +451,7 @@ pub fn main() !void {
 
     std.debug.print("Hashmap contains user with id 1? {}\n", .{map.contains(1)});
 
-    std.debug.print("User {}\n", .{map.get(2).?});
+    std.debug.print("User {1s} ({0})\n", map.get(2).?);
 }
 ```
 
@@ -461,10 +461,122 @@ pub fn main() !void {
 Hashmap contains: 2
 Removed user: 1
 Hashmap contains user with id 1? false
-User main.User{ .id = 2, .age = 21 }
+User Bob (2)
 ```
 
-Как мы можем заметить некоторые методы, такие как `get` и `remove`, могут вернуть `null`, поэтому мы используем оператор `?` для обработки возможных ошибок. Если вы передадите в эти методы ключ элемента, которого нет в хеш-таблице, то она не сможет найти его в массиве и должна вернуть вам `null`.
+Как мы можем заметить некоторые методы, такие как `get` и `remove`, могут вернуть `null`, поэтому мы используем оператор `?` для обработки возможных ошибок. Если вы передадите в эти методы ключ элемента, которого нет в хеш-таблице, то она не сможет найти его в массиве и должна вернуть вам `null`. Остальные методы показанные в примере довольно интуитивны и не требуют обьяснения. Давайте теперь попробуем изменить что-то в нашей хеш-таблице:
+
+```zig
+const std = @import("std");
+
+const User = struct {
+    id: i32,
+    name: []const u8,
+};
+
+pub fn main() !void {
+    var gpa = std.heap.DebugAllocator(.{}).init;
+    defer _ = gpa.deinit();
+    const allocator = gpa.allocator();
+
+    var map = std.AutoHashMap(i32, User).init(allocator);
+    defer map.deinit();
+
+    try map.put(1, .{ .id = 1, .name = "Alice" });
+    try map.put(2, .{ .id = 2, .name = "Bob" });
+
+    var user = map.get(1).?;
+
+    user.name = "Alice Smith";
+
+    std.debug.print("User {1s} ({0})\n", map.get(1).?);
+}
+```
+
+Как мы видим наш план не удался. Значение пользователя хранимое в хеш-карте не изменилось как мы планировали. Все дело в том, что метод `get` возвращает копию значения, а не ссылку на него. Поэтому, когда мы изменяем значение `user.name`, мы изменяем только копию, а не оригинальное значение в хеш-таблице. Для того чтобы изменить значение в хеш-таблице, нам нужно получить ссылку на значение и для этого у таблицы есть метод `getPtr` который возвращает указатель на значение:
+
+```zig
+const std = @import("std");
+
+const User = struct {
+    id: i32,
+    name: []const u8,
+};
+
+pub fn main() !void {
+    var gpa = std.heap.DebugAllocator(.{}).init;
+    defer _ = gpa.deinit();
+    const allocator = gpa.allocator();
+
+    var map = std.AutoHashMap(i32, User).init(allocator);
+    defer map.deinit();
+
+    try map.put(1, .{ .id = 1, .name = "Alice" });
+    try map.put(2, .{ .id = 2, .name = "Bob" });
+
+    const user = map.getPtr(1).?;
+
+    user.name = "Alice Smith";
+
+    std.debug.print("User {1s} ({0})\n", map.get(1).?);
+}
+```
+
+Теперь наш код выведет:
+
+```
+User Alice Smith (1)
+```
+
+Но при использовании метода `getPtr` есть одна опасность. Как мы уже упоминали при рассмотрении как устроена хеш-таблица, внутри нее все значения лежат в массиве, который имеет некоторый начальный размер. Если мы добавим в нашу хеш-таблицу много элементов, то в какой-то момент заполнение массива достигнет 80% и таблица начнет процесс реаллокации, выделил новый массив и перенеся туда данные. В этом случаи все ссылки на элементы таблицы, полученные через метод `getPtr`, станут недействительными и мы получим ошибку при попытке использовать их. Давайте рассмотрим пример:
+
+```zig
+const std = @import("std");
+
+const User = struct {
+    id: usize,
+    name: []const u8,
+};
+
+pub fn main() !void {
+    var gpa = std.heap.DebugAllocator(.{}).init;
+    defer _ = gpa.deinit();
+    const allocator = gpa.allocator();
+
+    var map = std.AutoHashMap(usize, User).init(allocator);
+    defer map.deinit();
+
+    try map.put(1, .{ .id = 1, .name = "Alice" });
+    try map.put(2, .{ .id = 2, .name = "Bob" });
+
+    const user = map.getPtr(1).?;
+
+    for (0..50) |i| {
+        try map.put(i, .{ .id = i, .name = "User" });
+    }
+
+    user.name = "Alice Smith";
+
+    std.debug.print("User {1s} ({0})\n", map.get(1).?);
+}
+```
+
+Если мы запустим нашу программу, то получим ошибку выполнения:
+
+```
+Segmentation fault at address 0x104a20080
+aborting due to recursive panic
+run
+└─ run simple failure
+error: the following command terminated unexpectedly:
+/Users/roman/Projects/zig/simple/zig-out/bin/simple
+Build Summary: 5/7 steps succeeded; 1 failed
+run transitive failure
+└─ run simple failure
+error: the following build command failed with exit code 1
+```
+
+Как мы и говорили, ссылка на элемент хеш-таблицы, полученная через метод `getPtr`, может стать недействительной после реаллокации массива, как и получилось в нашем примере. В этом случае мы должны обновить ссылку на элемент хеш-таблицы, чтобы она указывала на актуальный элемент.
 
 ### Итерирование по хеш-таблице
 
