@@ -576,9 +576,144 @@ run transitive failure
 error: the following build command failed with exit code 1
 ```
 
-Как мы и говорили, ссылка на элемент хеш-таблицы, полученная через метод `getPtr`, может стать недействительной после реаллокации массива, как и получилось в нашем примере. В этом случае мы должны обновить ссылку на элемент хеш-таблицы, чтобы она указывала на актуальный элемент.
+Как мы и говорили, ссылка на элемент хеш-таблицы, полученная через метод `getPtr`, может стать недействительной после реаллокации массива, как и получилось в нашем примере. В этом случае мы должны обновить ссылку на элемент хеш-таблицы, чтобы она указывала на актуальный элемент. Но что если нам надо чтобы мы могли изменять элементы хеш-таблицы и нам бы не приходилось постоянно следить за валидностью указателей. Можем ли мы как-то исправить проблему? Да можем. Мы можем хранить в нашей хеш-таблице не только значения, но и указатели на значения. Это позволит нам изменять значения в хеш-таблице без необходимости следить за валидностью указателей. Давайте рассмотрим пример:
+
+```zig
+const std = @import("std");
+
+const User = struct {
+    id: usize,
+    name: []const u8,
+};
+
+pub fn main() !void {
+    var gpa = std.heap.DebugAllocator(.{}).init;
+    defer _ = gpa.deinit();
+    const allocator = gpa.allocator();
+
+    var map = std.AutoHashMap(usize, *User).init(allocator);
+    defer map.deinit();
+
+    const user1 = try allocator.create(User);
+    user1.* = .{ .id = 1, .name = "Alice" };
+    try map.put(1, user1);
+
+    const user2 = try allocator.create(User);
+    user2.* = .{ .id = 2, .name = "Bob" };
+    try map.put(2, user2);
+
+    const first = map.get(1).?;
+
+    for (0..50) |i| {
+        const user = try allocator.create(User);
+        user.* = .{ .id = i, .name = "User" };
+        try map.put(i, user);
+    }
+
+    first.name = "Alice Smith";
+
+    std.debug.print("User {s}\n", .{map.get(1).?.name});
+}
+```
+
+Если мы запустим нашу программу, то получим кучу ошибок о том что у нас утекла память:
+
+```
+User User
+error(gpa): memory address 0x101040000 leaked:
+/Users/roman/Projects/zig/simple/src/main.zig:16:39: 0x100f227df in main (simple)
+    const user1 = try allocator.create(User);
+```
+
+Когда мы добавляли в нашу хеш-таблицу структуры `User`, по сути наша таблица владела этими структурами и при вызове `deinit`, происходит освобождение массивов в котором таблица хранила структуры `User`. Но если мы передаем в нашу таблицу указатели на структуры `User`, то таблица не владеет этими структурами, а владеет только указателями на них. Следовательно освобождение памяти, занимаемой структуров лежит на нас и мы должны об этом позаботится. Давайте исправим наш код и снова запустим:
+
+```zig
+const std = @import("std");
+
+const User = struct {
+    id: usize,
+    name: []const u8,
+};
+
+pub fn main() !void {
+    var gpa = std.heap.DebugAllocator(.{}).init;
+    defer _ = gpa.deinit();
+    const allocator = gpa.allocator();
+
+    var map = std.AutoHashMap(usize, *User).init(allocator);
+    defer map.deinit();
+
+    const user1 = try allocator.create(User);
+    defer allocator.destroy(user1);
+    user1.* = .{ .id = 1, .name = "Alice" };
+    try map.put(1, user1);
+
+    const user2 = try allocator.create(User);
+    defer allocator.destroy(user2);
+    user2.* = .{ .id = 2, .name = "Bob" };
+    try map.put(2, user2);
+
+    const first = map.get(1).?;
+
+    for (0..50) |i| {
+        const user = try allocator.create(User);
+        defer allocator.destroy(user);
+        user.* = .{ .id = i, .name = "User" };
+        try map.put(i, user);
+    }
+
+    first.name = "Alice Smith";
+
+    std.debug.print("User {s}\n", .{map.get(1).?.name});
+}
+```
+
+Теперь наш код выполняется без ошибок. Проблема с расширением массива для хеш-таблицы больше у нас не воспроизводится, так как мы не храним `User` в таблице, а храним только указатели. Когда наш массив заполнится на 80%, наша таблица запустит процесс расширения массива и перенесет наши указатели в новый массив, но при этом указатели поо прежнему будут ссылаться на структуры `User` созданные нами в куче и проблем с доступом к ним не будет.
+
+Когда мы используем для хранения в хеш-таблице указатели на структуры, вместо самих структур у нас разное время жизни у таблицы и данных, которые мы там храним и очень важно об этом помнить у правильно очищать память в вашей программе. Мы поговорим еще более подробно про владение данными в следующей главе.
 
 ### Итерирование по хеш-таблице
+Довольно часто у вас возникает необходимость пройтись по данным, которые хранятся в хеш-таблице и тут таблица предоставляет нам сразу несколько методов для итерирования по данным:
+
+* iterator - возвращает итератор по парам ключ/значение для хеш-таблицы
+* keyIterator - возвращает итератор по ключам хеш-таблицы
+* valueIterator - возвращает итератор по значениям хеш-таблицы
+
+Давайте рассмотрим пример:
+
+```zig
+const std = @import("std");
+
+const User = struct {
+    id: usize,
+    name: []const u8,
+};
+
+pub fn main() !void {
+    var gpa = std.heap.DebugAllocator(.{}).init;
+    defer _ = gpa.deinit();
+    const allocator = gpa.allocator();
+
+    var map = std.AutoHashMap(usize, User).init(allocator);
+    defer map.deinit();
+
+    try map.put(1, .{ .id = 1, .name = "Alice" });
+    try map.put(2, .{ .id = 2, .name = "Bob" });
+
+    var it = map.iterator();
+    while (it.next()) |entry| {
+        std.debug.print("User {s}\n", .{entry.value_ptr.name});
+    }
+}
+```
+
+Наш код выведет:
+```
+User Alice
+User Bob
+```
+
+Важно отметить что итератор возвращает нам структуру `Entry`, в которой лежат указатели на ключ и значение. Это позволяет нам не только итерироваться по данным в таблице для чтения, но и менять значения во врем яитерации что может быть удобно для обновления данных в хеш-таблице.
 
 ### ArrayHashMap
 
