@@ -715,6 +715,130 @@ User Bob
 
 Важно отметить, что итератор возвращает нам структуру `Entry`, в которой лежат указатели на ключ и значение. Это позволяет нам не только итерироваться по данным в таблице для чтения, но и менять значения во время итерации, что может быть удобно для обновления данных в хеш-таблице. Однако надо понимать, что изменение значения ключа может возможно только если новое значение даст тот же самый хеш, что и старое значение.
 
+Давайте рассмотрим ещё два аспекта взаимодействия с хеш-таблицей, которые часто оказываются полезными.
+
+Представим задачу: нам нужно хранить в хеш-таблице количество посещений пользователем нашего сайта. В этом случае в качестве ключа мы используем id пользователя, а в качестве значения — количество посещений.
+
+Когда мы хотим обновить счётчик посещений для пользователя, мы не знаем, есть ли уже запись о нём в таблице. Если её нет — нужно добавить нового пользователя и установить счётчик в 1. Если запись уже существует — просто увеличиваем счётчик на 1.
+
+Если бы мы писали такой код “в лоб”, он выглядел бы примерно так:
+
+```zig
+const std = @import("std");
+
+const User = struct {
+    id: usize,
+    name: []const u8,
+};
+
+pub fn main() !void {
+    var gpa = std.heap.DebugAllocator(.{}).init;
+    defer _ = gpa.deinit();
+    const allocator = gpa.allocator();
+
+    var map = std.AutoHashMap(usize, usize).init(allocator);
+    defer map.deinit();
+
+    const user_first_visit = map.getPtr(1);
+    if (user_first_visit) |u| {
+        u.* = u.* + 1;
+    } else {
+        try map.put(1, 1);
+    }
+
+    const user_second_visiit = map.getPtr(1);
+    if (user_second_visiit) |u| {
+        u.* = u.* + 1;
+    } else {
+        try map.put(1, 1);
+    }
+
+    var it = map.iterator();
+    while (it.next()) |entry| {
+        std.debug.print("User {d} visit us: {d}\n", .{ entry.key_ptr.*, entry.value_ptr.* });
+    }
+}
+```
+
+В этом коде, когда пользователь заходит на сайт, мы пытаемся получить указатель на значение в хеш-таблице по id пользователя. Если такое значение уже есть, мы увеличиваем счётчик на 1. Если значение не найдено, мы добавляем новую запись в хеш-таблицу с ключом `id` и значением 1.
+
+Однако такой подход не очень эффективен, поскольку мы дважды обращаемся к хеш-таблице, а значит, дважды вычисляется хеш ключа. Эта операция может быть достаточно затратной по времени.
+
+Чтобы избежать повторного обращения, хеш-таблица предоставляет метод `getOrPut`, который позволяет за одну операцию получить ссылку на значение и флаг, указывающий, была ли запись уже в таблице или она только что добавлена.
+
+Давайте перепишем наш код с использованием `getOrPut`:
+
+```zig
+const std = @import("std");
+
+const User = struct {
+    id: usize,
+    name: []const u8,
+};
+
+pub fn main() !void {
+    var gpa = std.heap.DebugAllocator(.{}).init;
+    defer _ = gpa.deinit();
+    const allocator = gpa.allocator();
+
+    var map = std.AutoHashMap(usize, usize).init(allocator);
+    defer map.deinit();
+
+    const user_first_visit = try map.getOrPut(1);
+    if (user_first_visit.found_existing) {
+        user_first_visit.value_ptr.* += 1;
+    } else {
+        user_first_visit.value_ptr.* = 1;
+    }
+
+    const user_second_visit = try map.getOrPut(1);
+    if (user_second_visit.found_existing) {
+        user_second_visit.value_ptr.* += 1;
+    } else {
+        user_second_visit.value_ptr.* = 1;
+    }
+
+    var it = map.iterator();
+    while (it.next()) |entry| {
+        std.debug.print("User {d} visit us: {d}\n", .{ entry.key_ptr.*, entry.value_ptr.* });
+    }
+}
+```
+
+Теперь при добавлении пользователя в нашу статистику мы используем метод `getOrPut`, который возвращает нам структуру, где есть значение `found_existing`, которое позволяет нам понять, есть ли уже запись в таблице или нет, а также возвращает нам указатель на значение.
+
+Второй часто встречающийся при работе с хеш-таблицами момент заключается в следующем. Иногда возникает необходимость хранить уникальное множество элементов.
+
+В языке Zig нет отдельного типа данных для множеств, но эту задачу можно решить с помощью хеш-карты, в которой значения имеют тип `void`. В этом случае мы не расходуем память на хранение, например, булевого признака, и при этом можем легко итерироваться по множеству, используя итератор по ключам хеш-таблицы.
+
+Давайте рассмотрим пример:
+
+```zig
+const std = @import("std");
+
+const User = struct {
+    id: usize,
+    name: []const u8,
+};
+
+pub fn main() !void {
+    var gpa = std.heap.DebugAllocator(.{}).init;
+    defer _ = gpa.deinit();
+    const allocator = gpa.allocator();
+
+    var map = std.AutoHashMap(usize, void).init(allocator);
+    defer map.deinit();
+
+    try map.put(1, {});
+    try map.put(2, {});
+
+    var it = map.keyIterator();
+    while (it.next()) |k| {
+        std.debug.print("User {d} visit us\n", .{k.*});
+    }
+}
+```
+
 ### ArrayHashMap
 
 

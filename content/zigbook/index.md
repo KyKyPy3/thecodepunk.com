@@ -27,7 +27,7 @@ class: zigbook
 * [Выполнение кода на этапе компиляции (comptime)]({{% ref "posts/zigbook12" %}})
 * [Интерфейсы]({{% ref "posts/zigbook13" %}})
 * [Модули]({{% ref "posts/zigbook14" %}})
-* ArrayList, MultiArrayList
+* [Динамические массивы (ArrayList, MultiArrayList)]({{% ref "posts/zigbook16" %}})
 * [Хеш-карты (HashMap)]({{% ref "posts/zigbook15" %}})
 * Заимствование и владение
 * Тестирование
