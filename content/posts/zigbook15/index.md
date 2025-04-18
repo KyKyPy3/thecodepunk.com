@@ -840,6 +840,47 @@ pub fn main() !void {
 ```
 
 ### ArrayHashMap
+ArrayHashMap - это гибридная структура данных, сочетающая преимущества динамического массива и хеш-таблицы. В Zig она реализована в стандартной библиотеке как std.ArrayHashMap и std.AutoArrayHashMap (с автоматическим определением типов). Эта структура особенно полезна, когда вам нужны быстрые lookup-операции по ключу, но также важна сохранение порядка вставки элементов. Этот тип хеш-карты хранит ключи и значения в массивах, что позволяет легко итерироваться по элементам в порядке их добавления. Если заглянуть в код данного типа данных, то можно увидеть что внутри используется уже известная нам структура `MultiArrayList`.
 
+```zig
+const std = @import("std");
+
+const User = struct {
+    id: usize,
+    name: []const u8,
+};
+
+pub fn main() !void {
+    var gpa = std.heap.DebugAllocator(.{}).init;
+    defer _ = gpa.deinit();
+    const allocator = gpa.allocator();
+
+    var map = std.AutoArrayHashMap(usize, User).init(allocator);
+    defer map.deinit();
+
+    try map.put(1, .{ .id = 1, .name = "Alice" });
+    try map.put(2, .{ .id = 2, .name = "Bob" });
+    try map.put(3, .{ .id = 3, .name = "Karoll" });
+
+    _ = map.orderedRemove(2);
+
+    try map.put(4, .{ .id = 4, .name = "Sam" });
+
+    var it = map.iterator();
+    while (it.next()) |entry| {
+        std.debug.print("'{d}': {s}\n", .{ entry.key_ptr.*, entry.value_ptr.*.name });
+    }
+}
+```
+
+Этот код выведет:
+
+```
+'1': Alice
+'3': Karoll
+'4': Sam
+```
+
+Данный тип хеш-таблицы почти ничем не отличается от обычной, кроме операций удаления элементов. Так как внутри данной структуры используется `MultiArrayList`, то операции удаления элементов выполняются также как и в типе данных `MultiArrayList`. Если вам необходимо удалить элементы без сохранения порядка, то используйте метод `swapRemove`, если же вам важен порядок элементов в хеш-карте, то используйте метод `orderedRemove`.
 
 ### StringArrayHashMap
