@@ -160,11 +160,407 @@ pub fn sum(a: i32, b: i32) i32 {
 В нашем примере тест, конечно, не особо полезен — мы добавили его лишь для демонстрации. В реальных проектах стоит добавлять такие тесты только в том случае, если они действительно принесут пользу тем, кто будет использовать вашу библиотеку.
 
 ## Встроенные тестовые функции
+Стандартная библиотека Zig предоставляет довольно много встроенных тестовых функций, которые можно использовать для написания тестов. Например, функция `std.testing.expect` используется для проверки равенства значений и мы уже использовали ее в наших примерах. Давайте рассмотрим еще несколько встроенных функций:
+
+- `std.testing.expectEqual`: проверяет равенство двух значений.
+- `std.testing.expectEqualStrings`: проверяет равенство двух строк.
+- `std.testing.expectEqualSlices`: проверяет равенство двух срезов.
+
+Давайте рассмотрим пример использования функций:
+
+```zig
+const std = @import("std");
+const testing = std.testing;
+
+const Foo = struct {
+    const name: []const u8 = "Foo";
+    const nums: []const i32 = &[_]i32{ 1, 2, 3 };
+
+    pub fn sum(a: i32, b: i32) i32 {
+        return a + b;
+    }
+};
+
+test "using expect" {
+    const a: i32 = 1;
+    const b: i32 = 2;
+
+    try testing.expect(Foo.sum(a, b) == 3);
+}
+
+test "using expectEqual" {
+    const first = Foo.sum(1, 2);
+    const second = Foo.sum(2, 1);
+    try testing.expectEqual(first, second);
+}
+
+test "using expectEqualString" {
+    try testing.expectEqualStrings("Foo", Foo.name);
+}
+
+test "using expectEqualSlices" {
+    try testing.expectEqualSlices(i32, Foo.nums, &[_]i32{ 1, 2, 3 });
+}
+```
+
+Если мы запустим наши тесты, то компилятор просто выведет нам что все наши тесты успешно завершились. Давайте исправим наши тесты так, чтобы они завершались с ошибкой и посмотрим что нам выведет компилятор.
+
+```zig
+const std = @import("std");
+const testing = std.testing;
+
+const Foo = struct {
+    const name: []const u8 = "Foo";
+    const nums: []const i32 = &[_]i32{ 1, 2, 3 };
+
+    pub fn sum(a: i32, b: i32) i32 {
+        return a + b;
+    }
+};
+
+test "using expect" {
+    const a: i32 = 1;
+    const b: i32 = 2;
+
+    try testing.expect(Foo.sum(a, b) == 4);
+}
+
+test "using expectEqual" {
+    const first = Foo.sum(1, 2);
+    const second = Foo.sum(2, 2);
+    try testing.expectEqual(first, second);
+}
+
+test "using expectEqualString" {
+    try testing.expectEqualStrings("Foo1", Foo.name);
+}
+
+test "using expectEqualSlices" {
+    try testing.expectEqualSlices(i32, Foo.nums, &[_]i32{ 11, 22, 33 });
+}
+```
+
+После запуска наших тестов мы увидим следующее:
+
+```
+$ zig test src/root.zig
+1/4 root.test.using expect...FAIL (TestUnexpectedResult)
+/Users/roman/.zvm/0.14.0/lib/std/testing.zig:580:14: 0x10471c7a3 in expect (test)
+    if (!ok) return error.TestUnexpectedResult;
+             ^
+/Users/roman/Projects/zig/simple/src/root.zig:17:5: 0x10471c8af in test.using expect (test)
+    try testing.expect(Foo.sum(a, b) == 4);
+    ^
+expected 3, found 4
+2/4 root.test.using expectEqual...FAIL (TestExpectedEqual)
+/Users/roman/.zvm/0.14.0/lib/std/testing.zig:103:17: 0x1047a5cff in expectEqualInner__anon_13971 (test)
+                return error.TestExpectedEqual;
+                ^
+/Users/roman/Projects/zig/simple/src/root.zig:23:5: 0x1047a5dbf in test.using expectEqual (test)
+    try testing.expectEqual(first, second);
+    ^
+
+====== expected this output: =========
+Foo1␃
+
+======== instead found this: =========
+Foo␃
+
+======================================
+First difference occurs on line 1:
+expected:
+Foo1
+   ^ ('\x31')
+found:
+Foo
+   ^ (end of string)
+3/4 root.test.using expectEqualString...FAIL (TestExpectedEqual)
+/Users/roman/.zvm/0.14.0/lib/std/testing.zig:641:9: 0x1047a6ca3 in expectEqualStrings (test)
+        return error.TestExpectedEqual;
+        ^
+/Users/roman/Projects/zig/simple/src/root.zig:27:5: 0x1047a776f in test.using expectEqualString (test)
+    try testing.expectEqualStrings("Foo1", Foo.name);
+    ^
+slices differ. first difference occurs at index 0 (0x0)
+
+============ expected this output: =============  len: 3 (0x3)
+
+[0]: 1
+[1]: 2
+[2]: 3
+
+============= instead found this: ==============  len: 3 (0x3)
+
+[0]: 11
+[1]: 22
+[2]: 33
+
+================================================
+
+4/4 root.test.using expectEqualSlices...FAIL (TestExpectedEqual)
+/Users/roman/.zvm/0.14.0/lib/std/testing.zig:435:5: 0x1047aabab in expectEqualSlices__anon_14687 (test)
+    return error.TestExpectedEqual;
+    ^
+/Users/roman/Projects/zig/simple/src/root.zig:31:5: 0x1047aad2f in test.using expectEqualSlices (test)
+    try testing.expectEqualSlices(i32, Foo.nums, &[_]i32{ 11, 22, 33 });
+    ^
+0 passed; 0 skipped; 4 failed.
+```
+
+Из вывода наших тестов можно заметить, что если бы мы не использовали специальные функции из стандартной библиотеки для тестирования, а писали бы все проверки вручную, например, только с использованием expect, вывод был бы гораздо менее информативным.
+
+Специальные функции, такие как `expectEqual`, `expectEqualSlices`, `expectError` и другие, значительно улучшают читаемость ошибок. Они предоставляют подробную информацию о том, что именно пошло не так в тесте.
+
+Например, `expectEqualSlices` покажет, какие именно элементы в срезах не совпадают и на каких позициях, а `expectEqual` наглядно укажет, какие значения ожидались и какие были получены. Это упрощает анализ проблем и ускоряет процесс отладки.
+
+Стандартная библиотека Zig предоставляет множество вспомогательных функций, которые значительно упрощают процесс написания и выполнения тестов. Перед тем как начинать писать собственные тесты, определённо стоит ознакомиться с документацией по тестированию в Zig — это поможет лучше понять доступные инструменты и писать более надёжный и читаемый тестовый код.
 
 ## Собственные тестовые функции
+При написании тестов для сложных структур данных не обязательно ограничиваться только стандартными функциями. Можно создавать свои специальные функции для проверки свойств и поведения структур. Давайте рассмотрим пример бинарного дерева и тестов для проверки его валидности:
+
+```zig
+const std = @import("std");
+const testing = std.testing;
+const expect = testing.expect;
+const expectEqual = testing.expectEqual;
+const print = std.debug.print;
+
+// Реализация стека
+const Stack = struct {
+    items: std.ArrayList(i32),
+
+    fn init(allocator: std.mem.Allocator) Stack {
+        return Stack{
+            .items = std.ArrayList(i32).init(allocator),
+        };
+    }
+
+    fn deinit(self: *Stack) void {
+        self.items.deinit();
+    }
+
+    fn push(self: *Stack, value: i32) !void {
+        try self.items.append(value);
+    }
+
+    fn pop(self: *Stack) ?i32 {
+        return if (self.items.pop()) |val| val else null;
+    }
+
+    fn peek(self: *Stack) ?i32 {
+        if (self.items.items.len == 0) return null;
+        return self.items.items[self.items.items.len - 1];
+    }
+
+    fn size(self: *Stack) usize {
+        return self.items.items.len;
+    }
+};
+
+// Самописная тестовая функция
+fn testStackOperations(allocator: std.mem.Allocator, values: []const i32) !void {
+    var stack = Stack.init(allocator);
+    defer stack.deinit();
+
+    print("\n=== Начало теста с значениями: {any} ===\n", .{values});
+
+    // Проверка пустого стека
+    if (stack.size() != 0) {
+        print("[ОШИБКА] Размер нового стека должен быть 0, получено: {d}\n", .{stack.size()});
+        return error.TestFailed;
+    }
+
+    if (stack.pop() != null) {
+        print("[ОШИБКА] Pop из пустого стека должен возвращать null\n", .{});
+        return error.TestFailed;
+    }
+
+    // Добавление элементов
+    print("\nДобавляем элементы:\n", .{});
+    for (values, 0..) |val, i| {
+        print("  Добавляем {d} (ожидаемый размер: {d})\n", .{ val, i + 1 });
+        try stack.push(val);
+
+        if (stack.peek()) |peek_val| {
+            if (peek_val != val) {
+                print("[ОШИБКА] Ожидался peek = {d}, получено {d}\n", .{ val, peek_val });
+                return error.TestFailed;
+            }
+        } else {
+            print("[ОШИБКА] Peek после push вернул null\n", .{});
+            return error.TestFailed;
+        }
+
+        const current_size = stack.size();
+        if (current_size != i + 1) {
+            print("[ОШИБКА] Ожидался размер = {d}, получено {d}\n", .{ i + 1, current_size });
+            return error.TestFailed;
+        }
+    }
+
+    // Проверка размера
+    print("\nПроверка размера стека:\n", .{});
+    const final_size = stack.size();
+    if (final_size != values.len) {
+        print("[ОШИБКА] Ожидался размер = {d}, получено {d}\n", .{ values.len, final_size });
+        return error.TestFailed;
+    }
+    print("  Размер стека корректный: {d}\n", .{final_size});
+
+    // Извлечение элементов
+    print("\nИзвлекаем элементы:\n", .{});
+    var i: usize = values.len;
+    while (i > 0) : (i -= 1) {
+        const expected_val = values[i - 1];
+        if (stack.pop()) |popped| {
+            print("  Извлечено {d} (ожидалось {d})", .{ popped, expected_val });
+
+            if (popped == expected_val) {
+                print(" - OK\n", .{});
+            } else {
+                print(" - [ОШИБКА]\n", .{});
+                return error.TestFailed;
+            }
+        } else {
+            print("[ОШИБКА] Pop вернул null, ожидалось {d}\n", .{expected_val});
+            return error.TestFailed;
+        }
+
+        // Проверка размера после извлечения
+        const expected_size = i - 1;
+        const actual_size = stack.size();
+        if (actual_size != expected_size) {
+            print("[ОШИБКА] После pop ожидался размер = {d}, получено {d}\n", .{ expected_size, actual_size });
+            return error.TestFailed;
+        }
+    }
+
+    // Финальная проверка пустого стека
+    print("\nФинальные проверки:\n", .{});
+    const final_empty_size = stack.size();
+    if (final_empty_size != 0) {
+        print("[ОШИБКА] Ожидался пустой стек (размер 0), получено {d}\n", .{final_empty_size});
+        return error.TestFailed;
+    }
+    print("  Размер стека после извлечения: 0 - OK\n", .{});
+
+    if (stack.pop() != null) {
+        print("[ОШИБКА] Финальный pop должен вернуть null\n", .{});
+        return error.TestFailed;
+    }
+    print("  Финальный pop вернул null - OK\n", .{});
+
+    print("=== Тест успешно завершён ===\n", .{});
+}
+
+// Основные тесты
+test "stack operations with integers" {
+    const allocator = testing.allocator;
+    try testStackOperations(allocator, &[_]i32{ 1, 2, 3, 4, 5 });
+}
+
+test "stack operations with empty stack" {
+    const allocator = testing.allocator;
+    try testStackOperations(allocator, &[_]i32{});
+}
+
+test "stack operations with single value" {
+    const allocator = testing.allocator;
+    try testStackOperations(allocator, &[_]i32{42});
+}
+```
+
+Если мы запустим наш пример, то получим следующий вывод:
+
+```
+$ zig test src/root.zig
+
+=== Начало теста с значениями: { 1, 2, 3, 4, 5 } ===
+
+Добавляем элементы:
+  Добавляем 1 (ожидаемый размер: 1)
+  Добавляем 2 (ожидаемый размер: 2)
+  Добавляем 3 (ожидаемый размер: 3)
+  Добавляем 4 (ожидаемый размер: 4)
+  Добавляем 5 (ожидаемый размер: 5)
+
+Проверка размера стека:
+  Размер стека корректный: 5
+
+Извлекаем элементы:
+  Извлечено 5 (ожидалось 5) - OK
+  Извлечено 4 (ожидалось 4) - OK
+  Извлечено 3 (ожидалось 3) - OK
+  Извлечено 2 (ожидалось 2) - OK
+  Извлечено 1 (ожидалось 1) - OK
+
+Финальные проверки:
+  Размер стека после извлечения: 0 - OK
+  Финальный pop вернул null - OK
+=== Тест успешно завершён ===
+
+=== Начало теста с значениями: {  } ===
+
+Добавляем элементы:
+
+Проверка размера стека:
+  Размер стека корректный: 0
+
+Извлекаем элементы:
+
+Финальные проверки:
+  Размер стека после извлечения: 0 - OK
+  Финальный pop вернул null - OK
+=== Тест успешно завершён ===
+
+=== Начало теста с значениями: { 42 } ===
+
+Добавляем элементы:
+  Добавляем 42 (ожидаемый размер: 1)
+
+Проверка размера стека:
+  Размер стека корректный: 1
+
+Извлекаем элементы:
+  Извлечено 42 (ожидалось 42) - OK
+
+Финальные проверки:
+  Размер стека после извлечения: 0 - OK
+  Финальный pop вернул null - OK
+=== Тест успешно завершён ===
+All 3 tests passed.
+```
+
+Для удобного тестирования нашего стека мы написали тестовую функцию, которая подробно выводит информацию во время выполнения. Это позволяет быстрее находить и анализировать ошибки в случае, если тесты завершатся неудачно.
+
+## Тестирование ошибок
+Довольно распространённая задача при тестировании библиотеки — это проверка того, что функции корректно возвращают ожидаемые ошибки в определённых ситуациях. Например, вы хотите убедиться, что при некорректном вводе или нарушении условий выполнения вызывается конкретная ошибка, предусмотренная логикой вашей программы.
+
+Для таких случаев в стандартной библиотеке Zig предусмотрена специальная функция — `testing.expectError`. С её помощью можно явно указать, какую ошибку вы ожидаете от функции, и тест будет провален, если функция вернёт что-то другое или вовсе не вернёт ошибку.
+
+Давайте рассмотрим пример её использования:
+
+```zig
+const testing = @import("std").testing;
+const MyError = error{InvalidInput};
+
+fn mightFail(value: i32) !void {
+    if (value < 0) return MyError.InvalidInput;
+}
+
+test "ошибка при отрицательном значении" {
+    try testing.expectError(MyError.InvalidInput, mightFail(-1));
+}
+```
+
+В этом примере функция `mightFail` возвращает ошибку `InvalidInput`, если получает отрицательное значение. С помощью `expectError` мы проверяем, что при передаче -1 действительно будет сгенерирована именно эта ошибка.
+
+Такой подход позволяет делать тесты более надёжными и самодокументируемыми, особенно когда важна корректная обработка исключительных ситуаций.
 
 ## Фильтрация тестов
 
 ## Кастомный тест раннер
+
+## Подсчет покрытия кода тестами
 
 ## Заключение
