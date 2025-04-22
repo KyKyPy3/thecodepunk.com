@@ -1,5 +1,5 @@
 ---
-title: Выполнениек кода на этапе компиляции (comptime)
+title: Выполнение кода на этапе компиляции (comptime)
 date: 2025-03-22 15:00:00
 showTableOfContents: true
 showComments: true
