@@ -1,6 +1,6 @@
 ---
 title: Сборка проекта
-date: 2025-04-26 12:00:00
+date: 2025-04-26 10:00:00
 showTableOfContents: true
 showComments: true
 katex: true
