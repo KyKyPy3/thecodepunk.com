@@ -1,6 +1,6 @@
 ---
 title: Заимствование и владение
-date: 2025-04-18 15:00:00
+date: 2025-04-29 15:00:00
 showTableOfContents: true
 showComments: true
 katex: true

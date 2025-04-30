@@ -35,7 +35,7 @@ class: zigbook
 * [Модули]({{% ref "posts/zigbook14" %}})
 * [Динамические массивы и списки]({{% ref "posts/zigbook16" %}})
 * [Хеш-таблица (HashMap)]({{% ref "posts/zigbook15" %}})
-* Заимствование и владение
+* [Заимствование и владение]({{% ref "posts/zigbook17" %}})
 * [Тестирование]({{% ref "posts/zigbook18" %}})
 * [Сборка проекта]({{% ref "posts/zigbook19" %}})
 * Генерация документации
