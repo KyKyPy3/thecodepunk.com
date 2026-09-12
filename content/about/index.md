@@ -66,7 +66,7 @@ devoted themselves to colossal computers that occupied entire rooms.
 {{</header>}}
 
 <ul class="interests">
-    <li>Flutter</li>
+    <li>LLM</li>
     <li>Neural networks</li>
     <li>Graph databases</li>
 </ul>

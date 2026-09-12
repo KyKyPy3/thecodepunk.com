@@ -75,3 +75,6 @@ cleanDestinationDir = true
     noClasses = false
     noHl = false
     tabWidth = 2
+
+[security]
+  allowContent = ['^text/html$', '^text/markdown$']

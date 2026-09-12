@@ -1,0 +1,23 @@
+{{ $options := dict "outputStyle" "compressed" "enableSourceMap" (not hugo.IsProduction) }}
+{{ $style := resources.Get "css/style.scss" | css.Sass $options }}
+{{- if .Site.Params.fingerprint -}}
+  {{- $style = $style | resources.Fingerprint -}}
+  <link
+    rel="stylesheet"
+    href="{{ $style.RelPermalink }}"
+    integrity="{{ $style.Data.Integrity }}"
+    crossorigin="anonymous"
+  />
+{{- else -}}
+  <link rel="stylesheet" href="{{ $style.RelPermalink }}" />
+{{- end -}}
+
+{{- if eq .Params.class "projects" -}}
+  {{- $projectsStyle := resources.Get "css/projects.scss" | css.Sass $options -}}
+  <link rel="stylesheet" href="{{ $projectsStyle.RelPermalink }}" />
+{{- end -}}
+
+{{ $syntaxDarkCSS := resources.Get "css/syntax_dark.css" | minify }}
+{{ $syntaxLightCSS := resources.Get "css/syntax_light.css" | minify }}
+<link rel="preload stylesheet" as="style" href="{{ $syntaxDarkCSS.Permalink }}" />
+<link rel="preload stylesheet" as="style" href="{{ $syntaxLightCSS.Permalink }}" />
