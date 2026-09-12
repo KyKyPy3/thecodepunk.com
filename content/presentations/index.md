@@ -22,10 +22,7 @@ the original PDF.
 
 <section class="project-list" aria-label="Presentation slides">
   <article class="project-card">
-    <div
-      class="project-card__visual"
-      style="--presentation-cover: url('clean-architecture.webp')"
-    >
+    <div class="project-card__visual">
       <img
         src="clean-architecture.webp"
         alt="Title slide of the Clean Architecture presentation"
@@ -57,10 +54,7 @@ the original PDF.
   </article>
 
   <article class="project-card">
-    <div
-      class="project-card__visual"
-      style="--presentation-cover: url('webassembly-plugins.webp')"
-    >
+    <div class="project-card__visual">
       <img
         src="webassembly-plugins.webp"
         alt="Title slide of the Heroes of Modularity presentation"
