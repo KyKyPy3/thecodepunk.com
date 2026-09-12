@@ -15,7 +15,17 @@
 {{- $pageClasses := split (.Params.class | default "") " " -}}
 {{- if in $pageClasses "projects" -}}
   {{- $projectsStyle := resources.Get "css/projects.scss" | css.Sass $options -}}
-  <link rel="stylesheet" href="{{ $projectsStyle.RelPermalink }}" />
+  {{- if .Site.Params.fingerprint -}}
+    {{- $projectsStyle = $projectsStyle | resources.Fingerprint -}}
+    <link
+      rel="stylesheet"
+      href="{{ $projectsStyle.RelPermalink }}"
+      integrity="{{ $projectsStyle.Data.Integrity }}"
+      crossorigin="anonymous"
+    />
+  {{- else -}}
+    <link rel="stylesheet" href="{{ $projectsStyle.RelPermalink }}" />
+  {{- end -}}
 {{- end -}}
 
 {{ $syntaxDarkCSS := resources.Get "css/syntax_dark.css" | minify }}

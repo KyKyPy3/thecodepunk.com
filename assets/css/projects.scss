@@ -147,9 +147,16 @@
   }
 }
 
-.presentations {
+.talks {
+  .project-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 30px;
+  }
+
   .project-card {
     grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
 
     &:nth-child(even) .project-card__visual {
       order: 0;
@@ -172,6 +179,20 @@
       object-fit: contain;
     }
   }
+
+  .project-card__body {
+    padding: 26px;
+  }
+
+  .project-card h2 {
+    font-size: clamp(1.55rem, 3vw, 2rem);
+  }
+
+  .project-card__number {
+    top: 18px;
+    right: 20px;
+    font-size: 2rem;
+  }
 }
 
 [data-theme="dark"] .projects {
@@ -179,6 +200,12 @@
   --project-paper: #282828;
   --project-accent: #22c55e;
   --project-accent-secondary: #d63864;
+}
+
+@media screen and (max-width: 900px) {
+  .talks .project-list {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media screen and (max-width: 760px) {

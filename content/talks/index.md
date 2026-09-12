@@ -1,9 +1,11 @@
 ---
-title: Presentations
+title: Talks
 description: Slides from talks by Roman Efremenko about software architecture and systems programming.
+aliases:
+  - /presentations/
 showTitle: false
 showMeta: false
-class: projects presentations
+class: projects talks
 ---
 
 {{<header class="center">}}
