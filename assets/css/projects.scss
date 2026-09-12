@@ -147,6 +147,18 @@
   }
 }
 
+.presentations .project-card__visual {
+  display: flex;
+  align-items: center;
+  background: #161209;
+
+  img {
+    height: auto;
+    min-height: 0;
+    object-fit: contain;
+  }
+}
+
 [data-theme="dark"] .projects {
   --project-ink: #fdf4e7;
   --project-paper: #282828;

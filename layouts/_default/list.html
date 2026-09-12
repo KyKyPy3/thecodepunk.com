@@ -1,0 +1,40 @@
+{{ define "content" }}
+  <h1 class="title">
+    {{ $title := .Title }}
+    {{ $section := .Section | humanize }}
+
+    {{ if and (ne $section $title) (ne $section "Tags") (ne $title (printf "%ss" $section)) }}
+      {{ $section }}:
+    {{ end }}
+
+    {{ if and (eq $section "Tags") (eq $section $title) }}
+      # {{ i18n "tagsColumn" }}
+    {{ else }}
+      {{ if and (eq $section "Tags") (ne $section $title) }}{{ i18n "tagColumn" }} # {{ end }}{{ $title }}
+    {{ end }}
+  </h1>
+  <ul class="list">
+    {{ if and (eq $section "Tags") (eq $section $title) }}
+      {{ range (sort .Pages "Title") }}
+        <li class="first">
+          <a href="{{ .Permalink }}">{{ .Title }}</a>
+        </li>
+      {{ end }}
+    {{ else }}
+      {{ $hideZigBook := eq .Section "posts" }}
+      {{ range .Pages }}
+        {{ $isZigBook := in (.Params.tags | default (slice)) "zigbook" }}
+        {{ if not (and $hideZigBook $isZigBook) }}
+          <li class="second">
+            <span class="date">
+              [{{- partial "date.html" .Date -}}]
+            </span>
+            <span>
+              <a href="{{ .Permalink }}">{{ .Title }}</a>
+            </span>
+          </li>
+        {{ end }}
+      {{ end }}
+    {{ end }}
+  </ul>
+{{ end }}

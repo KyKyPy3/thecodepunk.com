@@ -12,7 +12,8 @@
   <link rel="stylesheet" href="{{ $style.RelPermalink }}" />
 {{- end -}}
 
-{{- if eq .Params.class "projects" -}}
+{{- $pageClasses := split (.Params.class | default "") " " -}}
+{{- if in $pageClasses "projects" -}}
   {{- $projectsStyle := resources.Get "css/projects.scss" | css.Sass $options -}}
   <link rel="stylesheet" href="{{ $projectsStyle.RelPermalink }}" />
 {{- end -}}

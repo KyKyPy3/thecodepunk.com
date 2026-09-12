@@ -32,14 +32,19 @@ cleanDestinationDir = true
         weight = 5
         url = "projects"
     [[menu.header]]
+        identifier = "presentations"
+        name = "Presentations"
+        weight = 6
+        url = "presentations"
+    [[menu.header]]
         identifier = "tags"
         name = "Tags"
-        weight = 6
+        weight = 7
         url = "tags"
     [[menu.header]]
         identifier = "about"
         name = "About"
-        weight = 7
+        weight = 8
         url = "about"
 
 [params]
