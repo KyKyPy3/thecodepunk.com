@@ -148,14 +148,29 @@
 }
 
 .presentations .project-card__visual {
+  position: relative;
   display: flex;
   align-items: center;
+  overflow: hidden;
   background: #161209;
 
+  &::before {
+    position: absolute;
+    z-index: 0;
+    inset: -24px;
+    background: var(--presentation-cover) center / cover no-repeat;
+    content: "";
+    filter: blur(16px) brightness(0.62) saturate(1.15);
+    transform: scale(1.1);
+  }
+
   img {
+    position: relative;
+    z-index: 1;
     height: auto;
     min-height: 0;
     object-fit: contain;
+    box-shadow: 0 0 22px rgba(0, 0, 0, 0.24);
   }
 }
 
@@ -206,6 +221,16 @@
       top: 18px;
       right: 18px;
       font-size: 2rem;
+    }
+  }
+
+  .presentations .project-card__visual {
+    &::before {
+      display: none;
+    }
+
+    img {
+      box-shadow: none;
     }
   }
 }

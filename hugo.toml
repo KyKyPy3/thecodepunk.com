@@ -33,7 +33,7 @@ cleanDestinationDir = true
         url = "projects"
     [[menu.header]]
         identifier = "presentations"
-        name = "Presentations"
+        name = "Talks"
         weight = 6
         url = "presentations"
     [[menu.header]]
