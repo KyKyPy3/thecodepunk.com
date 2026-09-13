@@ -13,11 +13,12 @@
 
 .home-portrait__worm {
   position: absolute;
-  right: 80px;
   bottom: -43px;
+  left: 50%;
   z-index: 2;
   width: 245px;
   height: auto;
+  margin-left: -75px;
   filter: drop-shadow(3px 3px 0 #d63864);
   pointer-events: none;
   user-select: none;
@@ -34,9 +35,9 @@
   }
 
   .home-portrait__worm {
-    right: 42px;
     bottom: -35px;
     width: 150px;
+    margin-left: -45px;
     filter: drop-shadow(2px 2px 0 #d63864);
   }
 
