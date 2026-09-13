@@ -7,7 +7,6 @@ url: /
     <div class="photo">
         <img src="/images/me.jpg" alt="Roman Efremenko">
     </div>
-    <img class="home-portrait__worm" src="/images/punk-worm.webp" alt="" width="463" height="720" aria-hidden="true">
 </div>
 
 {{<header class="center main-idea">}}
@@ -32,6 +31,10 @@ url: /
 ███████╗██║░░╚██╔╝░░███████╗  ██║██║░╚███║  ██████╔╝██║░░██║██║░░██║██████╔╝╚█████╔╝░░╚██╔╝░╚██╔╝░╚█║
 ╚══════╝╚═╝░░░╚═╝░░░╚══════╝  ╚═╝╚═╝░░╚══╝  ╚═════╝░╚═╝░░╚═╝╚═╝░░╚═╝╚═════╝░░╚════╝░░░░╚═╝░░░╚═╝░░░╚╝
 
+{{</header>}}
+
+<div class="home-manifesto__ending">
+{{<header class="center main-idea home-manifesto__last-line">}}
 ███╗░░██╗░█████╗░  ███╗░░░███╗░█████╗░██████╗░███████╗░░░░░░░░░
 ████╗░██║██╔══██╗  ████╗░████║██╔══██╗██╔══██╗██╔════╝░░░░░░░░░
 ██╔██╗██║██║░░██║  ██╔████╔██║██║░░██║██████╔╝█████╗░░░░░░░░░░░
@@ -39,3 +42,5 @@ url: /
 ██║░╚███║╚█████╔╝  ██║░╚═╝░██║╚█████╔╝██║░░██║███████╗██╗██╗██╗
 ╚═╝░░╚══╝░╚════╝░  ╚═╝░░░░░╚═╝░╚════╝░╚═╝░░╚═╝╚══════╝╚═╝╚═╝╚═╝
 {{</header>}}
+<img class="home-manifesto__worm" src="/images/punk-worm-crawling.webp" alt="" width="800" height="292" aria-hidden="true">
+</div>
