@@ -1,0 +1,45 @@
+{{ define "content" }}
+<main class="home-stage">
+  <article class="holo-profile" aria-labelledby="profile-name">
+    <div class="holo-profile__glow" aria-hidden="true"></div>
+
+    <div class="holo-profile__logo">
+      <img src="/logo.png" alt="thecodepunk" width="571" height="116">
+    </div>
+
+    <div class="holo-profile__photo">
+      <img src="/images/me.jpg" alt="Roman Efremenko" width="640" height="640">
+    </div>
+
+    <div class="holo-profile__identity">
+      <h1 id="profile-name">{{ .Params.profileName }}</h1>
+      <p>{{ .Params.profileRole }}</p>
+    </div>
+
+    <nav class="holo-profile__socials" aria-label="Social profiles">
+      <ul>
+        {{ range .Site.Params.SocialIcons }}
+        <li>
+          <a target="_blank" href="{{ .url }}" aria-label="{{ .name | humanize }}" {{ if .rel }}rel="{{ .rel }}"{{ else }}rel="noopener noreferrer"{{ end }}>
+            <i class="inline-icon">{{ partial "svg" .name }}</i>
+          </a>
+        </li>
+        {{ end }}
+      </ul>
+    </nav>
+
+    <section class="holo-profile__message" aria-label="Personal message">
+      <div class="holo-profile__message-header">
+        <span>INCOMING MESSAGE</span>
+        <span class="holo-profile__signal" aria-hidden="true"></span>
+      </div>
+      <p>
+        <span>Just few bytes.</span>
+        <span>Seek for true.</span>
+        <span>Live in shadow.</span>
+        <span>No more...<i class="holo-profile__cursor" aria-hidden="true"></i></span>
+      </p>
+    </section>
+  </article>
+</main>
+{{ end }}

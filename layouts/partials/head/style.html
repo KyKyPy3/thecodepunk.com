@@ -12,6 +12,19 @@
   <link rel="stylesheet" href="{{ $style.RelPermalink }}" />
 {{- end -}}
 
+{{- $siteStyle := resources.Get "css/site.scss" | css.Sass $options -}}
+{{- if .Site.Params.fingerprint -}}
+  {{- $siteStyle = $siteStyle | resources.Fingerprint -}}
+  <link
+    rel="stylesheet"
+    href="{{ $siteStyle.RelPermalink }}"
+    integrity="{{ $siteStyle.Data.Integrity }}"
+    crossorigin="anonymous"
+  />
+{{- else -}}
+  <link rel="stylesheet" href="{{ $siteStyle.RelPermalink }}" />
+{{- end -}}
+
 {{- $pageClasses := split (.Params.class | default "") " " -}}
 {{- if in $pageClasses "projects" -}}
   {{- $projectsStyle := resources.Get "css/projects.scss" | css.Sass $options -}}
