@@ -3,8 +3,11 @@ showScrollTop: false
 showMeta: false
 url: /
 ---
-<div class="photo">
-    <img src="/images/me.jpg" alt="">
+<div class="home-portrait">
+    <div class="photo">
+        <img src="/images/me.jpg" alt="Roman Efremenko">
+    </div>
+    <img class="home-portrait__worm" src="/images/punk-worm.webp" alt="" width="463" height="720" aria-hidden="true">
 </div>
 
 {{<header class="center main-idea">}}

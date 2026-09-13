@@ -1,0 +1,50 @@
+.home-portrait {
+  position: relative;
+  width: 100%;
+  max-width: 470px;
+  margin: 40px auto 48px;
+
+  .photo {
+    position: relative;
+    z-index: 2;
+    margin: 0;
+  }
+}
+
+.home-portrait__worm {
+  position: absolute;
+  right: 0;
+  bottom: -34px;
+  z-index: 1;
+  display: block;
+  width: 154px;
+  height: auto;
+  transform: rotate(8deg);
+  filter: drop-shadow(5px 5px 0 #d63864);
+  pointer-events: none;
+  user-select: none;
+}
+
+[data-theme="light"] .home-portrait__worm {
+  filter: drop-shadow(5px 5px 0 #22c55e);
+}
+
+@media screen and (max-width: 684px) {
+  .home-portrait {
+    width: 100%;
+    max-width: 282px;
+    margin-top: 32px;
+    margin-bottom: 34px;
+  }
+
+  .home-portrait__worm {
+    right: 0;
+    bottom: -26px;
+    width: 112px;
+    filter: drop-shadow(3px 3px 0 #d63864);
+  }
+
+  [data-theme="light"] .home-portrait__worm {
+    filter: drop-shadow(3px 3px 0 #22c55e);
+  }
+}

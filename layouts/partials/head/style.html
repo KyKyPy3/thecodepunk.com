@@ -28,6 +28,21 @@
   {{- end -}}
 {{- end -}}
 
+{{- if .IsHome -}}
+  {{- $homeStyle := resources.Get "css/home.scss" | css.Sass $options -}}
+  {{- if .Site.Params.fingerprint -}}
+    {{- $homeStyle = $homeStyle | resources.Fingerprint -}}
+    <link
+      rel="stylesheet"
+      href="{{ $homeStyle.RelPermalink }}"
+      integrity="{{ $homeStyle.Data.Integrity }}"
+      crossorigin="anonymous"
+    />
+  {{- else -}}
+    <link rel="stylesheet" href="{{ $homeStyle.RelPermalink }}" />
+  {{- end -}}
+{{- end -}}
+
 {{ $syntaxDarkCSS := resources.Get "css/syntax_dark.css" | minify }}
 {{ $syntaxLightCSS := resources.Get "css/syntax_light.css" | minify }}
 <link rel="preload stylesheet" as="style" href="{{ $syntaxDarkCSS.Permalink }}" />
